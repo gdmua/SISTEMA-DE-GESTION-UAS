@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistema de Gestión de UAS</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <!-- Plugin para rotar marcadores -->
+  <script src="https://unpkg.com/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.min.js"></script>
+
+  <!-- Fuente -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    :root{
+      --primary:#2563eb;
+      --primary-600:#1d4ed8;
+      --secondary:#7c3aed;
+      --success:#10b981;
+      --warning:#f59e0b;
+      --danger:#ef4444;
+
+      --bg:#0b1220;        /* fondo app */
+      --panel:#ffffff;     /* panel cards */
+      --ink:#0f172a;       /* texto principal */
+      --muted:#64748b;     /* texto secundario */
+      --muted-2:#94a3b8;   /* texto tenue */
+      --line:#e2e8f0;      /* bordes suaves */
+
+      --chip:#0f1b33;      /* chips header */
+      --chip-border:#27436f;
+
+      --radius:16px;
+      --shadow-1:0 10px 30px rgba(2,8,23,.25);
+      --shadow-2:0 12px 24px rgba(2,8,23,.08);
+    }
+
+    html,body{height:100%}
+    body{
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: radial-gradient(1200px 800px at 8% -10%, #11213a 0%, #0b1220 40%, #0a0f1a 100%);
+      color:var(--ink);
+      overflow:hidden;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .container{
+      display:flex; flex-direction:column; height:100vh;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 60%),
+        linear-gradient(180deg, #0e1524 0%, #0a0f1a 100%);
+    }
+
+    /* Header */
+    .dashboard-header{
+      background:linear-gradient(135deg, #0b1220, #0f1a33 60%, #14223d);
+      color:#eaf1ff; padding:1rem 1.5rem; display:flex; justify-content:space-between; align-items:center;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      box-shadow:var(--shadow-1); flex-shrink:0; position:relative; z-index:2;
+      flex-wrap:wrap; gap:1rem;
+    }
+    .header-left h1{
+      font-size:1.45rem; font-weight:800; letter-spacing:.2px; line-height:1.1;
+      background:linear-gradient(135deg, #b6ccff, #60a5fa, #3b82f6);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      text-shadow:0 0 22px rgba(59,130,246,.25);
+      margin-bottom:.2rem;
+    }
+    .header-left p{font-size:.9rem; color:#cfe0ff}
+
+    .status-chips{display:flex; gap:.75rem; flex-wrap:wrap}
+    .chip{
+      display:flex; align-items:center; gap:.55rem; padding:.5rem 1rem; border-radius:999px;
+      background:var(--chip); border:1px solid var(--chip-border);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+      color:#e5edff; font-weight:700;
+      font-size:.85rem;
+    }
+    .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 10px rgba(16,185,129,.8);}
+
+    /* Main */
+    .main-content{
+      display:flex; flex:1; gap:1.1rem; padding:1.1rem; overflow:hidden; min-height:0;
+      flex-direction:column;
+    }
+
+    .panel{
+      background:var(--panel); border-radius:var(--radius); position:relative; overflow:hidden;
+      border:1px solid var(--line); box-shadow:var(--shadow-2);
+    }
+    .control-panel{width:100%; display:flex; flex-direction:column; order:1;}
+    .map-panel{flex:1; display:flex; flex-direction:column; min-width:0; order:2;}
+    .drones-panel{width:100%; display:flex; flex-direction:column; order:3;}
+
+    .content-wrapper{display:flex; flex-direction:column; height:100%; gap:1rem; padding:1.1rem;}
+
+    .panel-title{
+      display:flex; align-items:center; gap:.6rem; color:var(--ink); font-weight:800; font-size:.98rem;
+      border-bottom:2px solid var(--line); padding-bottom:.6rem;
+    }
+    .panel-title::before{
+      content:""; width:6px; height:18px; border-radius:4px;
+      background:linear-gradient(180deg, var(--primary), var(--secondary));
+      box-shadow:0 0 16px rgba(37,99,235,.35);
+    }
+
+    /* Stats */
+    .stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:.8rem;}
+    .stat-card{
+      position:relative; overflow:hidden; border-radius:14px; color:#fff;
+      background: linear-gradient(135deg, rgba(37,99,235,1) 0%, rgba(99,102,241,1) 100%);
+      padding:1.05rem;
+    }
+    .stat-value{font-size:1.7rem; font-weight:800; line-height:1;}
+    .stat-label{font-size:.82rem; font-weight:600; opacity:.95;}
+
+    /* Status cards */
+    .system-status{display:flex; flex-direction:column; gap:.75rem;}
+    .status-card{background:linear-gradient(180deg,#f8fbff,#ffffff); padding:1rem; border-radius:12px; border:1px solid var(--line);}
+    .status-row{display:flex; align-items:center; gap:.55rem; font-weight:800; color:var(--ink)}
+    .metric-item{display:flex; justify-content:space-between; align-items:center; padding:.55rem 0; border-bottom:1px dashed var(--line);}
+    .metric-item:last-child{border-bottom:0}
+    .metric-label{font-size:.82rem; color:var(--muted)}
+    .metric-value{font-weight:800; font-size:.9rem; color:var(--ink)}
+
+    /* Map header */
+    .map-header{
+      padding:.9rem 1.05rem; display:flex; justify-content:space-between; align-items:center;
+      border-bottom:1px solid var(--line); background:#fff;
+      flex-wrap:wrap; gap:.75rem;
+    }
+    .map-header h3{font-weight:800; font-size:1.02rem; color:var(--ink); line-height:1.3;}
+    .legend{display:flex; gap:.5rem; flex-wrap:wrap}
+    .legend-item{
+      display:flex; align-items:center; gap:.45rem;
+      background:#f7fbff; color:var(--ink); border:1px solid var(--line);
+      padding:.4rem .65rem; border-radius:999px; font-weight:700; font-size:.8rem;
+    }
+    .legend-dot{width:12px;height:12px;border-radius:50%}
+    .legend-dot.commercial{background:var(--danger)}
+    .legend-dot.delivery{background:var(--primary)}
+    .legend-dot.surveillance{background:var(--secondary)}
+
+    /* Map controls (botonera) */
+    .map-controls{display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
+    .btn{
+      border:1px solid var(--line); border-radius:10px; padding:.55rem .8rem; font-weight:700; font-size:.85rem;
+      background:#fff; color:var(--ink); cursor:pointer;
+      transition:transform .08s ease, box-shadow .2s ease, background .15s ease, border .15s ease;
+    }
+    .btn:hover{background:#f8fafc; box-shadow:0 6px 14px rgba(2,8,23,.08)}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{
+      background:linear-gradient(180deg,#2563eb,#1d4ed8); color:#fff; border-color:#1e3a8a;
+      box-shadow:0 8px 16px rgba(37,99,235,.22);
+    }
+    .btn-primary:hover{filter:brightness(1.05)}
+    .btn-ghost{background:#fff}
+    .btn-icon{display:inline-flex; align-items:center; gap:.5rem}
+
+    .map-container{flex:1; position:relative; min-height:400px;}
+    #map{width:100%; height:100%}
+
+    /* Drones list */
+    .search-box{position:relative}
+    .search-box input{
+      width:100%; padding:.8rem 1rem .8rem 2.4rem; border:1px solid var(--line);
+      border-radius:12px; background:#f8fafc; font-size:.9rem; transition:border .2s, box-shadow .2s, background .2s;
+    }
+    .search-box input:focus{outline:none; border-color:var(--primary); box-shadow:0 0 0 4px rgba(37,99,235,.12); background:#fff}
+    .search-box::before{content:'🔍'; position:absolute; left:.8rem; top:50%; transform:translateY(-50%); opacity:.7}
+    .drones-list{display:flex; flex-direction:column; gap:.75rem}
+    .drone-item{background:#fff; padding:1rem 1.05rem; border-radius:12px; border:1px solid var(--line); transition:transform .15s ease, box-shadow .2s ease;}
+    .drone-item:hover{transform:translateX(4px); box-shadow:0 10px 20px rgba(15,23,42,.08)}
+    .drone-item-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:.35rem}
+    .drone-id{font-weight:800; color:var(--ink)}
+    .drone-type{font-size:.72rem; padding:.28rem .65rem; border-radius:999px; font-weight:800; color:#fff; background:var(--primary)}
+    .drone-info{font-size:.85rem; color:var(--muted); line-height:1.55}
+    .drone-info strong{color:var(--ink)}
+
+    /* Alerts */
+    .alerts-container{display:flex; flex-direction:column; gap:.7rem}
+    .alert-item{padding:1rem; border-radius:12px; font-size:.86rem; border:1px solid var(--line); background:#f8fafc}
+    .alert-item.info{background:#eff6ff; border-color:#bfdbfe}
+    .alert-item.warning{background:#fffbeb; border-color:#fde68a}
+    .alert-item.danger{background:#fef2f2; border-color:#fecaca}
+    .alert-item.success{background:#f0fdf4; border-color:#bbf7d0}
+    .alert-item small{display:block; opacity:.7; margin-top:.25rem; font-weight:700}
+
+    /* Footer */
+    .dashboard-footer{
+      background:linear-gradient(135deg, #0b1220, #0d162b);
+      color:#c7d2fe; padding:1rem 1.5rem; display:flex; justify-content:space-between; font-size:.86rem;
+      border-top:1px solid rgba(255,255,255,.06);
+      flex-wrap:wrap; gap:.5rem;
+    }
+
+    /* Scrollbars */
+    .panel-section.scrollable{overflow-y:auto; max-height:300px;}
+    .drones-panel .content-wrapper{overflow-y:auto;}
+    .control-panel .content-wrapper{overflow-y:auto;}
+    
+    ::-webkit-scrollbar{width:8px;height:8px}
+    ::-webkit-scrollbar-track{background:rgba(148,163,184,.15);border-radius:6px}
+    ::-webkit-scrollbar-thumb{background:linear-gradient(180deg, #94a3b8, #64748b);border-radius:6px}
+    ::-webkit-scrollbar-thumb:hover{background:#475569}
+
+    /* Drone icon */
+    .drone-icon{position:relative;width:28px;height:28px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+    .drone-icon .pulse{
+      position:absolute; inset:0; width:48px; height:48px; left:50%; top:50%;
+      transform:translate(-50%, -50%);
+      background:rgba(37,99,235,.18);
+      border-radius:50%; animation:pulse 2s infinite; z-index:-1;
+    }
+    @keyframes pulse{0%{transform:translate(-50%,-50%) scale(.55);opacity:1}100%{transform:translate(-50%,-50%) scale(1.25);opacity:0}}
+
+    /* Polígonos */
+    .leaflet-interactive.polygon-fill{stroke-dasharray:5 5; stroke-dashoffset:0; animation:dash 18s linear infinite}
+    @keyframes dash{to{stroke-dashoffset:-100}}
+    .polygon-commercial{stroke:var(--danger); fill:rgba(239,68,68,.25)}
+    .polygon-delivery{stroke:var(--primary); fill:rgba(37,99,235,.25)}
+    .polygon-surveillance{stroke:var(--secondary); fill:rgba(124,58,237,.25)}
+
+    /* Batería */
+    .battery-indicator{display:inline-block; width:64px; height:12px; background:var(--line); border-radius:6px; overflow:hidden; vertical-align:middle; margin-left:.35rem}
+    .battery-level{height:100%; border-radius:6px; transition:width .25s ease}
+    .battery-high{background:var(--success)}
+    .battery-medium{background:var(--warning)}
+    .battery-low{background:var(--danger)}
+
+    /* EXPANDIR MAPA (layout alterno) */
+    .map-expanded .control-panel,
+    .map-expanded .drones-panel{display:none}
+    .map-expanded .map-panel{flex:1 1 100%}
+    .map-expanded .main-content{padding:0; gap:0}
+    .map-expanded .map-header{border-radius:0; border-left:0; border-right:0}
+    .map-expanded .map-panel{border-radius:0; border-left:0; border-right:0}
+    .map-expanded #map{border-radius:0}
+
+    /* Mobile Menu */
+    .mobile-menu-btn{
+      display:none; background:none; border:none; color:#eaf1ff; font-size:1.5rem; cursor:pointer;
+      padding:.5rem; border-radius:8px; transition:background .2s;
+    }
+    .mobile-menu-btn:hover{background:rgba(255,255,255,.1)}
+
+    /* Panel Toggles */
+    .panel-toggle{
+      display:none; position:absolute; top:1rem; right:1rem; z-index:10;
+      background:var(--primary); color:white; border:none; border-radius:50%;
+      width:40px; height:40px; cursor:pointer; box-shadow:var(--shadow-1);
+    }
+
+    /* ===== RESPONSIVE DESIGN ===== */
+    
+    /* Tablets (768px - 1024px) */
+    @media (min-width:768px){
+      .main-content{
+        flex-direction:row; flex-wrap:wrap;
+      }
+      .control-panel{width:48%; order:1;}
+      .map-panel{width:100%; order:3; min-height:500px;}
+      .drones-panel{width:48%; order:2;}
+    }
+
+    /* Desktop pequeño (1024px - 1200px) */
+    @media (min-width:1024px){
+      .main-content{
+        flex-direction:row; flex-wrap:nowrap;
+      }
+      .control-panel{width:320px; order:1;}
+      .map-panel{flex:1; order:2; min-width:400px;}
+      .drones-panel{width:350px; order:3;}
+    }
+
+    /* Desktop grande (>1200px) */
+    @media (min-width:1200px){
+      .control-panel{width:330px;}
+      .drones-panel{width:390px;}
+    }
+
+    /* Móviles (<768px) */
+    @media (max-width:767px){
+      .dashboard-header{padding:1rem; flex-direction:column; align-items:flex-start;}
+      .header-left{margin-bottom:.5rem;}
+      .status-chips{justify-content:flex-start;}
+      
+      .main-content{padding:.5rem; gap:.5rem;}
+      
+      .map-header{padding:.75rem; flex-direction:column; align-items:flex-start; gap:.5rem;}
+      .map-header h3{font-size:.95rem;}
+      .map-controls{justify-content:flex-start;}
+      
+      .stats-grid{grid-template-columns:1fr; gap:.5rem;}
+      .stat-card{padding:.8rem;}
+      .stat-value{font-size:1.4rem;}
+      
+      .dashboard-footer{flex-direction:column; text-align:center; padding:.75rem 1rem;}
+      
+      /* Mobile menu */
+      .mobile-menu-btn{display:block;}
+      
+      /* Panel toggles para móviles */
+      .control-panel, .drones-panel{
+        position:fixed; top:0; left:0; width:100%; height:100%; 
+        z-index:1000; transform:translateX(-100%); transition:transform .3s ease;
+        border-radius:0;
+      }
+      .control-panel.active, .drones-panel.active{transform:translateX(0);}
+      
+      .panel-toggle{display:block;}
+    }
+
+    /* Pantallas muy pequeñas (<480px) */
+    @media (max-width:480px){
+      .dashboard-header h1{font-size:1.2rem;}
+      .chip{font-size:.8rem; padding:.4rem .8rem;}
+      
+      .map-header h3{font-size:.85rem;}
+      .legend-item{font-size:.7rem; padding:.3rem .5rem;}
+      .btn{padding:.4rem .6rem; font-size:.8rem;}
+      
+      .content-wrapper{padding:.8rem;}
+      .panel-title{font-size:.9rem;}
+      
+      .drone-item{padding:.8rem;}
+      .drone-info{font-size:.8rem;}
+    }
+
+    /* Pantallas muy grandes (>1600px) */
+    @media (min-width:1600px){
+      .control-panel{width:360px;}
+      .drones-panel{width:420px;}
+      .main-content{gap:1.5rem; padding:1.5rem;}
+    }
+
+    /* Alturas específicas */
+    @media (max-height:700px){
+      .panel-section.scrollable{max-height:200px;}
+      .map-container{min-height:300px;}
+    }
+
+    @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="header-left">
+        <h1>🚁 Gobernación del Valle del Cauca</h1>
+        <p>Sistema de Gestión de UAS</p>
+      </div>
+      <div class="header-right">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div class="status-chips">
+          <div class="chip"><span class="dot"></span><span>Sistema: <strong>AUTÓNOMO</strong></span></div>
+          <div class="chip"><span class="dot"></span><span>Red: <strong>ESTABLE</strong></span></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <div class="main-content">
+      <!-- Left -->
+      <section class="control-panel panel" id="controlPanel">
+        <button class="panel-toggle" id="toggleControlPanel">✕</button>
+        <div class="content-wrapper">
+          <div class="panel-section">
+            <h3 class="panel-title">📊 ESTADÍSTICAS EN TIEMPO REAL</h3>
+            <div class="stats-grid">
+              <div class="stat-card"><div class="stat-value" id="totalDrones">0</div><div class="stat-label">Drones Activos</div></div>
+              <div class="stat-card"><div class="stat-value" id="activeFlights">0</div><div class="stat-label">Vuelos en Curso</div></div>
+              <div class="stat-card"><div class="stat-value" id="conflicts">0</div><div class="stat-label">Conflictos</div></div>
+              <div class="stat-card"><div class="stat-value" id="avgSpeed">0</div><div class="stat-label">Vel. Prom (km/h)</div></div>
+            </div>
+          </div>
+
+          <div class="panel-section scrollable">
+            <h3 class="panel-title">📡 ESTADO DEL SISTEMA</h3>
+            <div class="system-status">
+              <div class="status-card">
+                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Simulación: <strong>ACTIVA</strong></span></div>
+                <div class="metric-item"><span class="metric-label">Tiempo ejecución:</span><span class="metric-value" id="uptime">00:00:00</span></div>
+              </div>
+              <div class="status-card">
+                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Drones sin ubicación: <strong id="noLocationDrones">0</strong></span></div>
+                <div class="metric-item"><span class="metric-label">En zonas rurales:</span><span class="metric-value" id="ruralDrones">0</span></div>
+              </div>
+              <div class="status-card">
+                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Polígonos activos: <strong id="activePolygons">0</strong></span></div>
+                <div class="metric-item"><span class="metric-label">Actualizados:</span><span class="metric-value" id="updatedPolygons">0</span></div>
+              </div>
+              <div class="status-card">
+                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Drones urbanos: <strong id="urbanDrones">0</strong></span></div>
+                <div class="metric-item"><span class="metric-label">En Cali:</span><span class="metric-value" id="caliDrones">0</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-section scrollable">
+            <h3 class="panel-title">⚠️ ALERTAS DEL SISTEMA</h3>
+            <div id="alertsContainer" class="alerts-container">
+              <div class="alert-item info"><span>Sistema UTM Cali inicializado</span><small>Modo autónomo activado</small></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center -->
+      <section class="map-panel panel" id="mapPanel">
+        <div class="map-header">
+          <h3>🗺️ MAPA DE OPERACIONES - CALI Y VALLE DEL CAUCA</h3>
+          <div class="map-controls">
+            <button class="btn btn-icon btn-primary" id="btnExpand">⤢ Expandir mapa</button>
+            <button class="btn btn-icon btn-ghost" id="btnFullscreen">⛶ Pantalla completa</button>
+            <div class="legend" style="margin-left:.35rem">
+              <div class="legend-item"><span class="legend-dot commercial"></span> Comercial</div>
+              <div class="legend-item"><span class="legend-dot delivery"></span> Delivery</div>
+              <div class="legend-item"><span class="legend-dot surveillance"></span> Vigilancia</div>
+            </div>
+          </div>
+        </div>
+        <div class="map-container">
+          <div id="map"></div>
+        </div>
+      </section>
+
+      <!-- Right -->
+      <section class="drones-panel panel" id="dronesPanel">
+        <button class="panel-toggle" id="toggleDronesPanel">✕</button>
+        <div class="content-wrapper">
+          <div class="panel-section">
+            <h3 class="panel-title">✈️ DRONES ACTIVOS</h3>
+            <div class="search-box"><input type="text" id="droneSearch" placeholder="Buscar dron..."></div>
+          </div>
+          <div class="panel-section scrollable"><div id="dronesList" class="drones-list"></div></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+      <div>UTM Cali v4.2 • Sistema Autónomo de Gestión de Tráfico de Drones</div>
+      <div id="timestamp">--:--:--</div>
+    </footer>
+  </div>
+
+  <script>
+    // 🔒 DESHABILITAR CLIC DERECHO Y OTRAS ACCIONES
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    });
+
+    // Deshabilitar arrastrar imágenes
+    document.addEventListener('dragstart', function(e) {
+      e.preventDefault();
+      return false;
+    });
+
+    // Deshabilitar selección de texto en algunos elementos
+    document.addEventListener('selectstart', function(e) {
+      e.preventDefault();
+      return false;
+    });
+
+    class UTMSimulation {
+      constructor(){
+        this.drones = new Map();
+        this.isRunning = true;
+        this.simulationSpeed = 3;
+        this.conflictCount = 0;
+
+        this.map = null;
+        this.droneMarkers = new Map();
+        this.routeLines = new Map();
+        this.polygons = new Map();
+
+        this.startTime = new Date();
+        this.prevTs = performance.now();
+        this.lastUiUpdate = 0;
+        this.uiIntervalMs = 500;
+
+        this.personasNaturales = [
+          'Carlos Rodríguez','María García','José Martínez','Ana López',
+          'Juan Hernández','Laura González','Miguel Pérez','Isabel Sánchez',
+          'Pedro Ramírez','Carmen Torres','Fernando Flores','Elena Castro',
+          'Ricardo Ortega','Sofia Mendoza','Javier Rojas','Patricia Vargas',
+          'Alberto Núñez','Rosa Medina','Roberto Herrera','Teresa Guzmán'
+        ];
+
+       this.puntosValleCauca = [
+  // Zonas urbanas de Cali
+  { name:"Cali Centro",       lat:3.4516, lng:-76.5320, type:"urbana" },
+  { name:"Cali Norte",        lat:3.4800, lng:-76.5200, type:"urbana" },
+  { name:"Cali Sur",          lat:3.4200, lng:-76.5400, type:"urbana" },
+  { name:"Cali Oriente",      lat:3.4500, lng:-76.5000, type:"urbana" },
+  { name:"Cali Occidente",    lat:3.4400, lng:-76.5600, type:"urbana" },
+
+  
+  // Zonas alrededor de Cali
+  { name:"Pance",             lat:3.3800, lng:-76.5800, type:"rural" },
+  { name:"Menga",             lat:3.5200, lng:-76.5100, type:"rural" },
+  { name:"Cañaveralejo",      lat:3.4300, lng:-76.5200, type:"rural" },
+  { name:"Aguacatal",         lat:3.4600, lng:-76.4800, type:"rural" },
+  { name:"Villacarmelo",      lat:3.3500, lng:-76.6000, type:"rural" },
+  { name:"Montebello",        lat:3.5300, lng:-76.4700, type:"rural" },
+  { name:"El Hormiguero",     lat:3.4800, lng:-76.4400, type:"rural" },
+  { name:"San Antonio",       lat:3.4450, lng:-76.5450, type:"rural" },
+  { name:"San Fernando",      lat:3.4350, lng:-76.5350, type:"rural" },
+  { name:"Granada",           lat:3.4550, lng:-76.5250, type:"rural" },
+  { name:"Santa Mónica",      lat:3.4650, lng:-76.5150, type:"rural" },
+  
+  
+  // 🌟🌟 MUCHOS MÁS POLÍGONOS EN PALMIRA Y ALREDEDORES 🌟🌟
+  { name:"Palmira Centro",    lat:3.5394, lng:-76.3036, type:"urbana" },
+  { name:"Palmira Norte",     lat:3.5600, lng:-76.3000, type:"urbana" },
+  { name:"Palmira Sur",       lat:3.5200, lng:-76.3100, type:"urbana" },
+  { name:"Palmira Este",      lat:3.5400, lng:-76.2800, type:"urbana" },
+  { name:"Palmira Oeste",     lat:3.5350, lng:-76.3300, type:"urbana" },
+  
+  // Áreas rurales de Palmira - muchos polígonos
+  { name:"Cerrito",           lat:3.5800, lng:-76.2500, type:"rural" },
+  { name:"Rozo",              lat:3.5100, lng:-76.3500, type:"rural" },
+  { name:"Bolo La Italia",    lat:3.6000, lng:-76.3200, type:"rural" },
+  { name:"Obando",            lat:3.6200, lng:-76.2800, type:"rural" },
+  { name:"El Bungal",         lat:3.5500, lng:-76.2700, type:"rural" },
+  { name:"La Rivera",         lat:3.5300, lng:-76.2600, type:"rural" },
+  { name:"El Porvenir",       lat:3.5700, lng:-76.2900, type:"rural" },
+  { name:"San Isidro",        lat:3.5900, lng:-76.3100, type:"rural" },
+  { name:"La Esmeralda",      lat:3.5600, lng:-76.3400, type:"rural" },
+  { name:"El Recuerdo",       lat:3.5100, lng:-76.2900, type:"rural" },
+  { name:"Brisas de Palmira", lat:3.5450, lng:-76.3150, type:"rural" },
+  { name:"Villa del Prado",   lat:3.5250, lng:-76.3250, type:"rural" },
+  
+  // Otras ciudades del Valle
+  { name:"Yumbo",             lat:3.5823, lng:-76.4914, type:"urbana" },
+  { name:"Jamundí",           lat:3.2627, lng:-76.5430, type:"urbana" },
+  { name:"Candelaria",        lat:3.4065, lng:-76.3485, type:"urbana" },
+  { name:"Vijes",             lat:3.7000, lng:-76.4500, type:"rural" },
+  { name:"Dagua",             lat:3.6500, lng:-76.7000, type:"rural" },
+  { name:"La Cumbre",         lat:3.6500, lng:-76.5500, type:"rural" },
+  { name:"Ginebra",           lat:3.7333, lng:-76.2667, type:"rural" },
+  { name:"Guacarí",           lat:3.7667, lng:-76.3333, type:"rural" },
+  { name:"Restrepo",          lat:3.8333, lng:-76.5000, type:"rural" },
+  { name:"Riofrío",           lat:4.1500, lng:-76.2833, type:"rural" },
+
+  // 🌟🌟🌟 NUEVOS POLÍGONOS RURALES - VALLE DEL CAUCA 🌟🌟🌟
+  
+  // Norte del Valle - Zona de caña de azúcar
+  { name:"El Placer",         lat:3.8500, lng:-76.3500, type:"rural" },
+  { name:"La Paila",          lat:3.7800, lng:-76.2800, type:"rural" },
+  { name:"Roldanillo",        lat:4.4167, lng:-76.1500, type:"rural" },
+  { name:"Zarzal",            lat:4.3983, lng:-76.0772, type:"rural" },
+  { name:"La Unión",          lat:4.5333, lng:-76.1000, type:"rural" },
+  { name:"La Victoria",       lat:4.5244, lng:-76.0361, type:"rural" },
+  { name:"El Dovio",          lat:4.5083, lng:-76.2361, type:"rural" },
+  { name:"Alcalá",            lat:4.6747, lng:-75.7825, type:"rural" },
+  { name:"Ulloa",             lat:4.7044, lng:-75.7408, type:"rural" },
+  { name:"Cartago",           lat:4.7464, lng:-75.9117, type:"rural" },
+  { name:"Ansermanuevo",      lat:4.7972, lng:-75.9958, type:"rural" },
+  
+  // Centro del Valle - Zonas agrícolas
+  { name:"Pradera",           lat:3.4211, lng:-76.2433, type:"rural" },
+  { name:"Florida",           lat:3.3275, lng:-76.2386, type:"rural" },
+  { name:"El Cerrito",        lat:3.6847, lng:-76.3136, type:"rural" },
+  { name:"Ginebra",           lat:3.7333, lng:-76.2667, type:"rural" },
+  { name:"Guacarí",           lat:3.7667, lng:-76.3333, type:"rural" },
+  { name:"San Pedro",         lat:3.9956, lng:-76.2289, type:"rural" },
+  { name:"Tuluá Rural",       lat:4.0867, lng:-76.2000, type:"rural" },
+  { name:"Andalucía",         lat:4.1703, lng:-76.1706, type:"rural" },
+  { name:"Bugalagrande",      lat:4.2125, lng:-76.1556, type:"rural" },
+  { name:"Riofrío",           lat:4.1500, lng:-76.2833, type:"rural" },
+  
+  // Sur del Valle - Zona montañosa
+  { name:"El Águila",         lat:4.9083, lng:-76.1167, type:"rural" },
+  { name:"El Cairo",          lat:4.7600, lng:-76.2219, type:"rural" },
+  { name:"La Celia",          lat:5.0033, lng:-76.0033, type:"rural" },
+  { name:"Versalles",         lat:4.5750, lng:-76.1994, type:"rural" },
+  { name:"Argelia",           lat:4.7278, lng:-76.1214, type:"rural" },
+  { name:"El Danubio",        lat:3.8500, lng:-76.6500, type:"rural" },
+  { name:"Buenaventura Rural",lat:3.8800, lng:-77.0300, type:"rural" },
+  { name:"Córdoba",           lat:4.3911, lng:-75.6875, type:"rural" },
+  
+  // Zona Pacífica - Corredor Buenaventura
+  { name:"Cisneros",          lat:3.8500, lng:-76.9500, type:"rural" },
+  { name:"Sabaletas",         lat:3.8000, lng:-77.0800, type:"rural" },
+  { name:"Cajambre",          lat:3.7200, lng:-77.2500, type:"rural" },
+  { name:"Raposo",            lat:3.8300, lng:-77.1500, type:"rural" },
+  { name:"Zabaletas",         lat:3.7800, lng:-77.1200, type:"rural" },
+  { name:"Chicoral",          lat:3.6500, lng:-76.8500, type:"rural" },
+  { name:"Bitaco",            lat:3.5800, lng:-76.7500, type:"rural" },
+  
+  // Corredor Cali-Buenaventura
+  { name:"Loboguerrero",      lat:3.9200, lng:-76.5200, type:"rural" },
+  { name:"Queremal",          lat:3.5300, lng:-76.7000, type:"rural" },
+  { name:"El Queremal",       lat:3.5600, lng:-76.6800, type:"rural" },
+  { name:"La Elvira",         lat:3.4800, lng:-76.6200, type:"rural" },
+  { name:"La Leonera",        lat:3.5100, lng:-76.5800, type:"rural" },
+  
+  // Valle del Río Cauca - Zonas planas
+  { name:"Aguaclara",         lat:3.6200, lng:-76.2800, type:"rural" },
+  { name:"Mediacanoa",        lat:3.6800, lng:-76.3200, type:"rural" },
+  { name:"Ríofrío",           lat:4.1500, lng:-76.2833, type:"rural" },
+  { name:"La Manuelita",      lat:3.5900, lng:-76.3100, type:"rural" },
+  { name:"El Vínculo",        lat:3.6100, lng:-76.2900, type:"rural" },
+  { name:"Santa Elena",       lat:3.6400, lng:-76.2700, type:"rural" },
+  
+  // Zona de Ladera - Corregimientos altos
+  { name:"La Sirena",         lat:3.5200, lng:-76.5900, type:"rural" },
+  { name:"Los Andes",         lat:3.4800, lng:-76.5600, type:"rural" },
+  { name:"La Castilla",       lat:3.5400, lng:-76.5400, type:"rural" },
+  { name:"Villacarmelo",      lat:3.3500, lng:-76.6000, type:"rural" },
+  { name:"Pichindé",          lat:3.5200, lng:-76.6200, type:"rural" },
+  { name:"Felidia",           lat:3.4200, lng:-76.6200, type:"rural" },
+  { name:"La Elisa",          lat:3.4500, lng:-76.5800, type:"rural" },
+  
+  // Zona de Yumbo y alrededores industriales
+  { name:"Montalvo",          lat:3.6200, lng:-76.4800, type:"rural" },
+  { name:"Dapa",              lat:3.5800, lng:-76.5200, type:"rural" },
+  { name:"La Paz",            lat:3.6000, lng:-76.4400, type:"rural" },
+  { name:"Santa Inés",        lat:3.5500, lng:-76.4600, type:"rural" },
+  { name:"El Vallado",        lat:3.5300, lng:-76.4200, type:"rural" },
+  
+  // Zona de Jamundí y sur
+  { name:"Robles",            lat:3.2500, lng:-76.5300, type:"rural" },
+  { name:"Villa Colombia",    lat:3.2200, lng:-76.5500, type:"rural" },
+  { name:"El Bolo",           lat:3.2800, lng:-76.4800, type:"rural" },
+  { name:"La Habana",         lat:3.3000, lng:-76.5200, type:"rural" },
+  { name:"Potrerito",         lat:3.3200, lng:-76.5000, type:"rural" },
+  
+  // Zona de Candelaria y oriente
+  { name:"Santa Bárbara",     lat:3.4500, lng:-76.3800, type:"rural" },
+  { name:"El Hormiguero",     lat:3.4800, lng:-76.4400, type:"rural" },
+  { name:"La Pampa",          lat:3.4200, lng:-76.3500, type:"rural" },
+  { name:"Brisas del Cauca",  lat:3.3800, lng:-76.3200, type:"rural" },
+  { name:"El Recuerdo",       lat:3.5100, lng:-76.2900, type:"rural" },
+  
+  // Zonas cafeteras del norte
+  { name:"La Marina",         lat:4.4500, lng:-76.1200, type:"rural" },
+  { name:"Bolívar",           lat:4.3386, lng:-76.1842, type:"rural" },
+  { name:"Sevilla",           lat:4.2689, lng:-75.9311, type:"rural" },
+  { name:"Caicedonia",        lat:4.3325, lng:-75.8278, type:"rural" },
+  { name:"El Paraíso",        lat:4.3800, lng:-75.8900, type:"rural" },
+  
+  // Zonas de reserva natural
+  { name:"Parque Farallones", lat:3.4500, lng:-76.6500, type:"rural" },
+  { name:"Reserva Pance",     lat:3.3500, lng:-76.6500, type:"rural" },
+  { name:"Alto Anchicayá",    lat:3.6000, lng:-76.8000, type:"rural" },
+  { name:"San Cipriano",      lat:3.7200, lng:-76.9000, type:"rural" },
+  { name:"Kilómetro 18",      lat:3.5500, lng:-76.7200, type:"rural" }
+];
+        this.initializeMap();
+        this.initializeEventListeners();
+        this.initializeMobileMenu();
+        this.updateTimestamp();
+        setInterval(()=>this.updateTimestamp(), 1000);
+        setInterval(()=>this.updateUptime(), 1000);
+
+        setTimeout(()=>{ this.addDrones(35); this.startSimulation(); }, 1000);
+        setInterval(()=>{ if (this.drones.size < 60) this.addDrones(5); }, 15000);
+      }
+
+      initializeMap(){
+        this.map = L.map('map').setView([3.5394, -76.3036], 10); // Centrado en Palmira
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+          attribution:'&copy; OpenStreetMap contributors'
+        }).addTo(this.map);
+
+        // 🔒 Deshabilitar clic derecho en el mapa también
+        this.map.on('contextmenu', function(e) {
+          e.originalEvent.preventDefault();
+          return false;
+        });
+
+        this.puntosValleCauca.forEach(p=>{
+  // Solo mostrar círculos para zonas rurales, omitir marcadores urbanos
+  if (p.type !== "urbana") {
+    L.circle([p.lat,p.lng],{ 
+      color:'#22c55e', 
+      fillColor:'#22c55e', 
+      fillOpacity:.1, 
+      radius:1500 
+    }).addTo(this.map).bindPopup(`<b>${p.name}</b><br>Zona Rural - Drones sin ubicación`);
+  }
+  // Las zonas urbanas no se muestran en el mapa
+});
+
+        window.addEventListener('resize', () => {
+          setTimeout(() => this.map.invalidateSize(), 100);
+        });
+      }
+
+      initializeEventListeners(){
+        document.getElementById('droneSearch')
+          .addEventListener('input', e=>this.filterDrones(e.target.value));
+
+        const app = document.getElementById('app');
+        const btnExpand = document.getElementById('btnExpand');
+        const mapPanel = document.getElementById('mapPanel');
+
+        const toggleExpand = ()=>{
+          app.classList.toggle('map-expanded');
+          const expanded = app.classList.contains('map-expanded');
+          btnExpand.textContent = expanded ? '⤡ Restaurar paneles' : '⤢ Expandir mapa';
+          setTimeout(()=> this.map.invalidateSize(), 300);
+        };
+
+        btnExpand.addEventListener('click', toggleExpand);
+        mapPanel.addEventListener('dblclick', toggleExpand);
+
+        const btnFull = document.getElementById('btnFullscreen');
+        btnFull.addEventListener('click', async ()=>{
+          try{
+            const root = document.documentElement;
+            if (!document.fullscreenElement){
+              if (root.requestFullscreen) await root.requestFullscreen();
+            } else {
+              if (document.exitFullscreen) await document.exitFullscreen();
+            }
+          }catch(e){ console.warn('Fullscreen no disponible', e); }
+          setTimeout(()=> this.map.invalidateSize(), 300);
+        });
+
+        document.addEventListener('fullscreenchange', ()=> setTimeout(()=> this.map.invalidateSize(), 250));
+      }
+
+      initializeMobileMenu(){
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const controlPanel = document.getElementById('controlPanel');
+        const dronesPanel = document.getElementById('dronesPanel');
+        const toggleControlPanel = document.getElementById('toggleControlPanel');
+        const toggleDronesPanel = document.getElementById('toggleDronesPanel');
+
+        mobileMenuBtn.addEventListener('click', () => {
+          const menu = document.createElement('div');
+          menu.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 18, 32, 0.95);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+          `;
+          
+          const buttons = [
+            { text: '📊 Panel de Control', action: () => controlPanel.classList.add('active') },
+            { text: '✈️ Lista de Drones', action: () => dronesPanel.classList.add('active') },
+            { text: '🗺️ Solo Mapa', action: () => this.toggleMapOnly() },
+            { text: '❌ Cerrar', action: () => document.body.removeChild(menu) }
+          ];
+
+          buttons.forEach(btn => {
+            const button = document.createElement('button');
+            button.textContent = btn.text;
+            button.style.cssText = `
+              padding: 1rem 2rem;
+              background: linear-gradient(135deg, #2563eb, #7c3aed);
+              color: white;
+              border: none;
+              border-radius: 12px;
+              font-size: 1.1rem;
+              font-weight: 600;
+              cursor: pointer;
+              width: 80%;
+              max-width: 300px;
+            `;
+            button.addEventListener('click', () => {
+              btn.action();
+              document.body.removeChild(menu);
+            });
+            menu.appendChild(button);
+          });
+
+          document.body.appendChild(menu);
+        });
+
+        toggleControlPanel.addEventListener('click', () => controlPanel.classList.remove('active'));
+        toggleDronesPanel.addEventListener('click', () => dronesPanel.classList.remove('active'));
+
+        document.addEventListener('click', (e) => {
+          if (!controlPanel.contains(e.target) && e.target !== mobileMenuBtn) {
+            controlPanel.classList.remove('active');
+          }
+          if (!dronesPanel.contains(e.target) && e.target !== mobileMenuBtn) {
+            dronesPanel.classList.remove('active');
+          }
+        });
+      }
+
+      toggleMapOnly(){
+        const controlPanel = document.getElementById('controlPanel');
+        const dronesPanel = document.getElementById('dronesPanel');
+        controlPanel.classList.remove('active');
+        dronesPanel.classList.remove('active');
+      }
+
+      startSimulation(){
+        if (!this.isRunning) this.isRunning = true;
+        this.addAlert('Sistema autónomo activado - Monitoreando Valle del Cauca','info');
+        requestAnimationFrame(()=>this.animate());
+      }
+
+      addDrones(count){
+        const droneTypes=['commercial','delivery','surveillance'];
+        const missions = [
+          'Entrega de alimentos','Vigilancia urbana','Monitoreo de tráfico',
+          'Entrega de paquetes','Inspección de infraestructura','Fotografía aérea','Control de cultivos',
+          'Vigilancia rural','Mapeo topográfico','Búsqueda y rescate',
+          'Monitoreo ambiental','Entrega express','Patrullaje de seguridad'
+        ];
+
+        for (let i=0;i<count;i++){
+          const id = `DRN-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
+          const type = droneTypes[Math.floor(Math.random()*droneTypes.length)];
+          const persona = this.personasNaturales[Math.floor(Math.random()*this.personasNaturales.length)];
+          const mission = missions[Math.floor(Math.random()*missions.length)];
+          const speed = 25 + Math.random()*50;
+
+          // Aumentar probabilidad de drones en Palmira
+          const esZonaUrbana = Math.random() > 0.35;
+          const sharesLocation = esZonaUrbana || Math.random() > 0.7;
+          
+          // Priorizar Palmira en las rutas
+          const esPalmira = Math.random() > 0.6;
+
+          let origin, destination;
+          if (esPalmira) {
+            // Rutas dentro de Palmira
+            const puntosPalmira = this.puntosValleCauca.filter(p => 
+              p.name.includes('Palmira') || 
+              p.name.includes('Cerrito') ||
+              p.name.includes('Rozo') ||
+              p.name.includes('Bolo') ||
+              p.name.includes('Obando')
+            );
+            origin = puntosPalmira[Math.floor(Math.random()*puntosPalmira.length)];
+            const cercanos = puntosPalmira.filter(p => p.name !== origin.name);
+            destination = cercanos.length ? cercanos[Math.floor(Math.random()*cercanos.length)] : puntosPalmira[Math.floor(Math.random()*puntosPalmira.length)];
+          } else if (esZonaUrbana){
+            const urb = this.puntosValleCauca.filter(p=>p.type==="urbana");
+            origin = urb[Math.floor(Math.random()*urb.length)];
+            const cercanos = urb.filter(p=>p.name!==origin.name && this.calculateDistance(origin.lat,origin.lng,p.lat,p.lng)<20);
+            destination = cercanos.length ? cercanos[Math.floor(Math.random()*cercanos.length)] : urb[Math.floor(Math.random()*urb.length)];
+          } else {
+            const rur = this.puntosValleCauca.filter(p=>p.type==="rural");
+            origin = rur[Math.floor(Math.random()*rur.length)];
+            const cercanos = rur.filter(p=>p.name!==origin.name && this.calculateDistance(origin.lat,origin.lng,p.lat,p.lng)<30);
+            destination = cercanos.length ? cercanos[Math.floor(Math.random()*cercanos.length)] : rur[Math.floor(Math.random()*rur.length)];
+          }
+
+          const drone = {
+            id, type, persona, mission, speed,
+            origin, destination,
+            position:{ lat:origin.lat, lng:origin.lng },
+            progress: Math.random()*0.4,
+            status:'en_ruta',
+            battery: 70 + Math.random()*30,
+            altitude: esZonaUrbana ? 60+Math.random()*60 : 90+Math.random()*80,
+            sharesLocation, estimatedArea:null, esZonaUrbana,
+            lastPositionUpdate: Date.now()
+          };
+
+          if (!sharesLocation){
+            drone.estimatedArea = this.createEstimatedArea(drone);
+            this.createPolygon(drone);
+          } else {
+            this.createDroneMarker(drone);
+          }
+
+          this.drones.set(id, drone);
+        }
+
+        this.addAlert(`${count} drones agregados al sistema`,'success');
+        this.updateUI(true);
+      }
+
+      createEstimatedArea(drone){
+        const r = 0.01 + Math.random()*0.015;
+        const pts=[];
+        for(let i=0;i<10;i++){
+          const a = (i/10)*2*Math.PI;
+          pts.push([drone.position.lat + r*Math.cos(a), drone.position.lng + r*Math.sin(a)]);
+        }
+        return pts;
+      }
+
+      createPolygon(drone){
+        if (!drone.estimatedArea) return;
+        const polygon = L.polygon(drone.estimatedArea, {
+          className:`polygon-fill polygon-${drone.type}`,
+          fillOpacity:.25, weight:2.5, opacity:.7
+        }).addTo(this.map);
+
+        polygon.bindPopup(`
+          <div style="min-width:220px;">
+            <b>${drone.id}</b><br>
+            Operador: ${drone.persona}<br>
+            Misión: ${drone.mission}<br>
+            <strong style="color:#ef4444;">UBICACIÓN ESTIMADA</strong><br>
+            Zona: ${drone.origin.name}<br>
+            Última actualización: ${new Date().toLocaleTimeString()}
+          </div>
+        `);
+
+        this.polygons.set(drone.id, polygon);
+      }
+
+      updatePolygon(drone){
+        if (!drone.estimatedArea || !this.polygons.has(drone.id)) return;
+        const polygon = this.polygons.get(drone.id);
+
+        const centerLat = drone.position.lat;
+        const centerLng = drone.position.lng;
+        
+        const newArea = drone.estimatedArea.map((point, index) => {
+          const originalCenter = this.getPolygonCenter(drone.estimatedArea);
+          const offsetLat = point[0] - originalCenter[0];
+          const offsetLng = point[1] - originalCenter[1];
+          return [centerLat + offsetLat, centerLng + offsetLng];
+        });
+        
+        drone.estimatedArea = newArea;
+        polygon.setLatLngs(newArea);
+      }
+
+      getPolygonCenter(points) {
+        let latSum = 0, lngSum = 0;
+        points.forEach(point => {
+          latSum += point[0];
+          lngSum += point[1];
+        });
+        return [latSum / points.length, lngSum / points.length];
+      }
+
+      createDroneMarker(drone){
+        const iconHtml = `
+          <div class="pulse"></div>
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+            <path fill="${this.getDroneColor(drone.type)}"
+              d="M22 16v-2l-8.5-5V3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V9L2 14v2l8.5-2.5V19L8 20.5V22l4-1 4 1v-1.5L13.5 19v-5.5L22 16z"/>
+          </svg>
+        `;
+
+        const droneIcon = L.divIcon({
+          className:`drone-icon ${drone.type}`,
+          html:iconHtml, iconSize:[28,28], iconAnchor:[14,14]
+        });
+
+        const marker = L.marker([drone.position.lat, drone.position.lng], {
+          icon:droneIcon,
+          rotationAngle:this.calculateBearing(drone.origin, drone.destination)
+        }).addTo(this.map);
+
+        marker.bindTooltip(`
+          <div style="font-weight:800;">${drone.id}</div>
+          <div>Operador: ${drone.persona}</div>
+          <div>Misión: ${drone.mission}</div>
+          <div>Vel: ${Math.round(drone.speed)} km/h</div>
+          <div>Alt: ${Math.round(drone.altitude)} m</div>
+          <div>Bat: ${Math.round(drone.battery)}%</div>
+        `);
+
+        this.droneMarkers.set(drone.id, marker);
+
+        const routeLine = L.polyline([
+          [drone.origin.lat, drone.origin.lng],
+          [drone.destination.lat, drone.destination.lng]
+        ], { color:this.getDroneColor(drone.type), weight:2, opacity:.4, dashArray:'6,4' }).addTo(this.map);
+
+        this.routeLines.set(drone.id, routeLine);
+      }
+
+      getDroneColor(type){
+        const c = {
+          commercial:'#ef4444',
+          delivery:'#2563eb',
+          surveillance:'#7c3aed'
+        };
+        return c[type] || '#2563eb';
+      }
+
+      calculateBearing(origin, dest){
+        const lat1 = origin.lat*Math.PI/180, lat2 = dest.lat*Math.PI/180;
+        const dLng = (dest.lng - origin.lng)*Math.PI/180;
+        const y = Math.sin(dLng)*Math.cos(lat2);
+        const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
+        return (Math.atan2(y,x)*180/Math.PI + 360) % 360;
+      }
+
+      animate(){
+        if (!this.isRunning) return;
+        const now = performance.now();
+        const dt = (now - this.prevTs)/1000;
+        this.prevTs = now;
+
+        this.updateDrones(dt);
+        this.checkConflicts();
+        this.updateUI();
+
+        requestAnimationFrame(()=>this.animate());
+      }
+
+      updateDrones(dt){
+        const speedFactor = this.simulationSpeed;
+
+        this.drones.forEach(drone=>{
+          if (drone.status!=='en_ruta') return;
+
+          const distKm = Math.max(this.calculateDistance(
+            drone.origin.lat, drone.origin.lng,
+            drone.destination.lat, drone.destination.lng
+          ), 0.001);
+
+          const fracPerSec = (drone.speed/3600) / distKm;
+          drone.progress += fracPerSec * dt * speedFactor;
+
+          if (drone.progress >= 1){
+            drone.origin = drone.destination;
+            let newDest;
+            
+            // Priorizar rutas en Palmira
+            const esPalmira = Math.random() > 0.6;
+            
+            if (esPalmira) {
+              const puntosPalmira = this.puntosValleCauca.filter(p => 
+                p.name.includes('Palmira') || 
+                p.name.includes('Cerrito') ||
+                p.name.includes('Rozo') ||
+                p.name.includes('Bolo') ||
+                p.name.includes('Obando')
+              );
+              const cercanos = puntosPalmira.filter(p => p.name !== drone.origin.name);
+              newDest = cercanos.length ? cercanos[Math.floor(Math.random()*cercanos.length)] : puntosPalmira[Math.floor(Math.random()*puntosPalmira.length)];
+            } else if (drone.esZonaUrbana){
+              const urb = this.puntosValleCauca.filter(p=>p.type==="urbana");
+              const cercanos = urb.filter(p=>p.name!==drone.origin.name && this.calculateDistance(drone.origin.lat,drone.origin.lng,p.lat,p.lng)<20);
+              newDest = cercanos.length? cercanos[Math.floor(Math.random()*cercanos.length)] : urb[Math.floor(Math.random()*urb.length)];
+            }else{
+              const rur = this.puntosValleCauca.filter(p=>p.type==="rural");
+              const cercanos = rur.filter(p=>p.name!==drone.origin.name && this.calculateDistance(drone.origin.lat,drone.origin.lng,p.lat,p.lng)<30);
+              newDest = cercanos.length? cercanos[Math.floor(Math.random()*cercanos.length)] : rur[Math.floor(Math.random()*rur.length)];
+            }
+            drone.destination = newDest;
+            drone.progress = 0;
+
+            if (drone.sharesLocation && this.routeLines.has(drone.id)){
+              this.map.removeLayer(this.routeLines.get(drone.id));
+              const newLine = L.polyline([
+                [drone.origin.lat, drone.origin.lng],
+                [drone.destination.lat, drone.destination.lng]
+              ], { color:this.getDroneColor(drone.type), weight:2, opacity:.4, dashArray:'6,4' }).addTo(this.map);
+              this.routeLines.set(drone.id, newLine);
+            }
+          }
+
+          drone.position.lat = drone.origin.lat + (drone.destination.lat - drone.origin.lat)*drone.progress;
+          drone.position.lng = drone.origin.lng + (drone.destination.lng - drone.origin.lng)*drone.progress;
+
+          if (drone.sharesLocation){
+            const marker = this.droneMarkers.get(drone.id);
+            if (marker){
+              marker.setLatLng([drone.position.lat, drone.position.lng]);
+              marker.setRotationAngle(this.calculateBearing(drone.origin, drone.destination));
+            }
+          } else {
+            this.updatePolygon(drone);
+          }
+
+          const consumption = 0.12 * speedFactor * dt;
+          drone.battery -= consumption;
+          if (drone.battery <= 20){
+            drone.battery = 80 + Math.random()*20;
+            this.addAlert(`${drone.id} recargando batería`,'warning');
+          }
+        });
+      }
+
+      checkConflicts(){
+        let conflicts = 0;
+        const arr = Array.from(this.drones.values()).filter(d=>d.sharesLocation);
+
+        for (let i=0;i<arr.length;i++){
+          for (let j=i+1;j<arr.length;j++){
+            const d1 = arr[i], d2 = arr[j];
+            const dist = this.calculateDistance(d1.position.lat,d1.position.lng, d2.position.lat,d2.position.lng);
+            if (dist < 0.08){
+              conflicts++;
+              if (Math.random() < 0.05){
+                this.addAlert(`Posible conflicto: ${d1.id} vs ${d2.id} (${Math.round(dist*1000)} m)`, 'danger');
+              }
+            }
+          }
+        }
+        this.conflictCount = conflicts;
+      }
+
+      calculateDistance(lat1,lng1,lat2,lng2){
+        const R=6371;
+        const dLat=(lat2-lat1)*Math.PI/180;
+        const dLng=(lng2-lng1)*Math.PI/180;
+        const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+        return 2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      updateUI(force=false){
+        const now = performance.now();
+        if (!force && now - this.lastUiUpdate < this.uiIntervalMs) return;
+        this.lastUiUpdate = now;
+
+        const total = this.drones.size;
+        const all = Array.from(this.drones.values());
+        const urban = all.filter(d=>d.esZonaUrbana).length;
+        const rural = total - urban;
+        const cali = all.filter(d=> d.origin.name.includes('Cali') || d.destination.name.includes('Cali')).length;
+        const palmira = all.filter(d=> d.origin.name.includes('Palmira') || d.destination.name.includes('Palmira')).length;
+        const noLoc = all.filter(d=>!d.sharesLocation).length;
+
+        document.getElementById('totalDrones').textContent = total;
+        document.getElementById('activeFlights').textContent = total;
+        document.getElementById('conflicts').textContent = this.conflictCount;
+        document.getElementById('noLocationDrones').textContent = noLoc;
+        document.getElementById('activePolygons').textContent = this.polygons.size;
+        document.getElementById('urbanDrones').textContent = urban;
+        document.getElementById('ruralDrones').textContent = rural;
+        document.getElementById('caliDrones').textContent = cali + palmira; // Incluir Palmira en Cali
+
+        const avgSpeed = total ? Math.round(all.reduce((s,d)=>s+d.speed,0)/total) : 0;
+        document.getElementById('avgSpeed').textContent = avgSpeed;
+
+        this.updateDronesList(all);
+      }
+
+      updateUptime(){
+        const diff = Date.now() - this.startTime.getTime();
+        const h = Math.floor(diff/3600000);
+        const m = Math.floor((diff%3600000)/60000);
+        const s = Math.floor((diff%60000)/1000);
+        document.getElementById('uptime').textContent =
+          `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      }
+
+      updateDronesList(dronesArray){
+        const list = document.getElementById('dronesList');
+        const search = (document.getElementById('droneSearch').value || "").toLowerCase();
+        const frag = document.createDocumentFragment();
+
+        dronesArray.forEach(drone=>{
+          const text = `${drone.id} ${drone.type} ${drone.persona} ${drone.mission} ${drone.origin.name} ${drone.destination.name}`.toLowerCase();
+          if (search && !text.includes(search)) return;
+
+          const batteryLevel = drone.battery>70? 'high' : drone.battery>30? 'medium' : 'low';
+          const locationStatus = drone.sharesLocation
+            ? '<span style="color:#10b981;">📍 Ubicación en tiempo real</span>'
+            : '<span style="color:#ef4444;">❓ Ubicación estimada</span>';
+          const zona = drone.esZonaUrbana ? 'Urbana' : 'Rural';
+          const dist = this.calculateDistance(drone.origin.lat,drone.origin.lng,drone.destination.lat,drone.destination.lng);
+
+          const div = document.createElement('div');
+          div.className='drone-item';
+          div.innerHTML=`
+            <div class="drone-item-header">
+              <span class="drone-id">${drone.id}</span>
+              <span class="drone-type" style="background:${this.getDroneColor(drone.type)}">${drone.type}</span>
+            </div>
+            <div class="drone-info">
+              <strong>${drone.persona}</strong><br>
+              ${locationStatus}<br>
+              Zona: ${zona}<br>
+              Misión: ${drone.mission}<br>
+              Ruta: ${drone.origin.name} → ${drone.destination.name}<br>
+              Distancia: ${Math.round(dist)} km<br>
+              Vel: ${Math.round(drone.speed)} km/h | Alt: ${Math.round(drone.altitude)} m<br>
+              Batería: ${Math.round(drone.battery)}%
+              <span class="battery-indicator">
+                <span class="battery-level battery-${batteryLevel}" style="width:${Math.max(0,Math.min(100,Math.round(drone.battery)))}%"></span>
+              </span>
+            </div>
+          `;
+          frag.appendChild(div);
+        });
+
+        list.innerHTML = '';
+        list.appendChild(frag);
+      }
+
+      filterDrones(){ this.updateUI(true); }
+
+      addAlert(message, type='info'){
+        const container = document.getElementById('alertsContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert-item ${type}`;
+        alert.innerHTML = `<span>${message}</span><small>${new Date().toLocaleTimeString()}</small>`;
+        container.insertBefore(alert, container.firstChild);
+        if (container.children.length > 8) container.removeChild(container.lastChild);
+      }
+
+      updateTimestamp(){ document.getElementById('timestamp').textContent = new Date().toLocaleTimeString(); }
+    }
+
+    document.addEventListener('DOMContentLoaded',()=>{ window.utmSimulation = new UTMSimulation(); });
+
+
+
+    
+  </script>
+</body>
+</html>
