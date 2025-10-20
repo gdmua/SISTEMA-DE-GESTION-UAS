@@ -403,6 +403,20 @@
 .ping--yellow .ping-wave,.ping--yellow .ping-wave2{ border-color:rgba(250,204,21,.85) }
 
 
+/* Punto pequeño que se mueve dentro del polígono */
+.mover-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background:#111827;                /* centro oscuro */
+  box-shadow: 0 0 0 2px #10b98166;   /* aro verdoso suave */
+}
+
+#dronesPanel {
+  display: none !important;
+}
+
+
   </style>
 </head>
 <body>
@@ -410,8 +424,7 @@
     <!-- Header -->
     <header class="dashboard-header">
       <div class="header-left">
-        <h1>🚁 Gobernación del Valle del Cauca</h1>
-        <p>Sistema de Gestión de UAS</p>
+        <h1>SISTEMA DE GESTIÓN DE DRONES</h1>
       </div>
       <div class="header-right">
         <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
@@ -429,7 +442,7 @@
         <button class="panel-toggle" id="toggleControlPanel">✕</button>
         <div class="content-wrapper">
           <div class="panel-section">
-            <h3 class="panel-title">📊 ESTADÍSTICAS EN TIEMPO REAL</h3>
+            <h3 class="panel-title"> ESTADÍSTICAS EN TIEMPO REAL</h3>
             <div class="stats-grid">
               <div class="stat-card"><div class="stat-value" id="totalDrones">0</div><div class="stat-label">Polígonos Activos</div></div>
               <div class="stat-card"><div class="stat-value" id="activeFlights">0</div><div class="stat-label">Zonas Monitoreadas</div></div>
@@ -439,7 +452,7 @@
           </div>
 
           <div class="panel-section scrollable">
-            <h3 class="panel-title">📡 ESTADO DEL SISTEMA</h3>
+            <h3 class="panel-title">ESTADO DEL SISTEMA</h3>
             <div class="system-status">
               <div class="status-card">
                 <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Sistema: <strong>ACTIVO</strong></span></div>
@@ -461,7 +474,7 @@
           </div>
 
           <div class="panel-section scrollable">
-            <h3 class="panel-title">⚠️ ALERTAS DEL SISTEMA</h3>
+            <h3 class="panel-title">ALERTAS DEL SISTEMA</h3>
             <div id="alertsContainer" class="alerts-container">
               <div class="alert-item info"><span>Sistema UTM Cali inicializado</span><small>Modo autónomo activado</small></div>
             </div>
@@ -472,13 +485,13 @@
       <!-- Center -->
       <section class="map-panel panel" id="mapPanel">
         <div class="map-header">
-          <h3>🗺️ MAPA DE OPERACIONES - CALI Y VALLE DEL CAUCA</h3>
+          <h3>MAPA DE OPERACIONES</h3>
           <div class="map-controls">
             <button class="btn btn-icon btn-primary" id="btnExpand">⤢ Expandir mapa</button>
             <button class="btn btn-icon btn-ghost" id="btnFullscreen">⛶ Pantalla completa</button>
             <div class="legend" style="margin-left:.35rem">
-              <div class="legend-item"><span class="legend-dot commercial"></span> Comercial</div>
-              <div class="legend-item"><span class="legend-dot delivery"></span> Delivery</div>
+              <div class="legend-item"><span class="legend-dot commercial"></span>Recreativo</div>
+              <div class="legend-item"><span class="legend-dot delivery"></span> Aspersión</div>
               <div class="legend-item"><span class="legend-dot surveillance"></span> Vigilancia</div>
             </div>
           </div>
@@ -493,7 +506,7 @@
         <button class="panel-toggle" id="toggleDronesPanel">✕</button>
         <div class="content-wrapper">
           <div class="panel-section">
-            <h3 class="panel-title">✈️ ZONAS DE OPERACIÓN</h3>
+            <h3 class="panel-title">ZONAS DE OPERACIÓN</h3>
             <div class="search-box"><input type="text" id="droneSearch" placeholder="Buscar zona..."></div>
           </div>
           <div class="panel-section scrollable"><div id="dronesList" class="drones-list"></div></div>
@@ -503,7 +516,7 @@
 
     <!-- Footer -->
     <footer class="dashboard-footer">
-      <div>UTM Cali v4.2 • Sistema Autónomo de Gestión de Tráfico de Drones</div>
+      <div>Sistema Autónomo de Gestión de Tráfico de Drones</div>
       <div id="timestamp">--:--:--</div>
     </footer>
   </div>
@@ -1070,15 +1083,26 @@ this.updateTimestamp();
 setInterval(() => this.updateTimestamp(), 1000);
 setInterval(() => this.updateUptime(), 1000);
 
-// === Capa de pings (crear y añadir al mapa) ===
 this.pingsLayer = L.layerGroup();
 this.pingsLayer.addTo(this.map);
+
+
+this.movers = [];  
+this.moverIntervalMs = 650;     
+setInterval(() => this.tickMovers(), this.moverIntervalMs);  
 
 // Crear muchos polígonos estáticos
 setTimeout(() => { this.createStaticPolygons(80); }, 1000);
 
-// Pings de señal (100 puntos con ondas)
+setTimeout(() => { this.spawnMoversForAll(); }, 1150);
+
+// Pings de señal
 setTimeout(() => { this.createVallePings(100); }, 1200);
+
+// Punticos móviles dentro de polígonos
+setTimeout(() => { this.spawnMovers(20); }, 2000);
+
+
 
 
       }
@@ -1411,12 +1435,11 @@ UTMSimulation.prototype.createPingIcon = function(colorClass) {
   });
 };
 
-UTMSimulation.prototype.addSignalPing = function(lat, lng, label) {
+// Reemplaza esta función completa
+UTMSimulation.prototype.addSignalPing = function(lat, lng, label, colorClass) {
   if (!label) label = "Nodo de señal";
-
-  // 4 colores: azul, verde, rojo y amarillo
-  var colors = ["ping--blue", "ping--green", "ping--red", "ping--yellow"];
-  var colorClass = colors[Math.floor(Math.random() * colors.length)];
+  // por defecto: verde
+  if (!colorClass) colorClass = "ping--green";
 
   var marker = L.marker([lat, lng], { icon: this.createPingIcon(colorClass) });
   marker.bindPopup("<b>" + label + "</b><br>Señal activa • " + lat.toFixed(4) + ", " + lng.toFixed(4));
@@ -1424,30 +1447,239 @@ UTMSimulation.prototype.addSignalPing = function(lat, lng, label) {
 };
 
 
-UTMSimulation.prototype.createVallePings = function(count) {
+
+// Reemplaza esta función completa
+// Reemplaza toda la función:
+UTMSimulation.prototype.createVallePings = function(count, cfg) {
   if (typeof count !== "number") count = 100;
+
+  // ⚙️ Config por defecto (ajusta aquí o al llamar la función)
+  cfg = Object.assign({
+    blues: 1,              // 1 azul (CLO)
+    yellows: 2,            // 2 amarillos (Buenaventura)
+    reds: 10,              // 10 rojos
+    greens: 30,            // 🔶 TOTAL de verdes que quieres (ajusta para "menos verdes")
+    greensPerTown: 3       // verdes por municipio (Yumbo, Jamundí, Candelaria, Palmira)
+  }, cfg || {});
+
+  // Limpiar capa para no duplicar
+  this.pingsLayer.clearLayers();
 
   function jitter(v, mag) { return v + (Math.random() * 2 - 1) * mag; }
 
-  var usados = Math.min(count, this.puntosValleCauca.length);
-  for (var i = 0; i < usados; i++) {
-    var base = this.puntosValleCauca[i];
-    var lat = jitter(base.lat, 0.06);   // ~6–7 km
-    var lng = jitter(base.lng, 0.06);
-    this.addSignalPing(lat, lng, base.name + " • Señal");
+  // ===== 1) Azul cerca al Aeropuerto de Cali (CLO)
+  var cloLat = 3.5431, cloLng = -76.3814;
+  for (var b = 0; b < cfg.blues; b++) {
+    this.addSignalPing(jitter(cloLat, 0.004), jitter(cloLng, 0.004), "CLO • Aeropuerto Cali", "ping--blue");
   }
 
-  var restante = count - usados;
+  // ===== 2) Buenaventura: amarillos
+  var bvoLat = 3.8890, bvoLng = -77.0200;
+  for (var y = 0; y < cfg.yellows; y++) {
+    this.addSignalPing(jitter(bvoLat, 0.008), jitter(bvoLng, 0.008), "Buenaventura • Señal", "ping--yellow");
+  }
+
+  // ===== 3) Rojos repartidos
   var minLat = 3.10, maxLat = 5.20;
   var minLng = -77.30, maxLng = -75.70;
-  for (var j = 0; j < restante; j++) {
+  for (var r = 0; r < cfg.reds; r++) {
     var rlat = minLat + Math.random() * (maxLat - minLat);
     var rlng = minLng + Math.random() * (maxLng - minLng);
-    this.addSignalPing(rlat, rlng, "Cobertura regional");
+    this.addSignalPing(rlat, rlng, "Alerta • Señal", "ping--red");
+  }
+
+  // ===== 4) Verdes por municipios (Yumbo, Jamundí, Candelaria, Palmira)
+  var municipiosCali = [
+    { name:"Yumbo",     lat:3.5823, lng:-76.4914 },
+    { name:"Jamundí",   lat:3.2627, lng:-76.5430 },
+    { name:"Candelaria",lat:3.4065, lng:-76.3485 },
+    { name:"Palmira",   lat:3.5394, lng:-76.3036 }
+  ];
+
+  // Si pediste pocos verdes, ajusta los por municipio para no pasarte
+  var maxVerdesTowns = Math.min(cfg.greens, municipiosCali.length * cfg.greensPerTown);
+  var verdesPorTown = Math.floor(maxVerdesTowns / municipiosCali.length);
+  var sobrantesTown = maxVerdesTowns - (verdesPorTown * municipiosCali.length);
+
+  var verdesColocados = 0;
+  for (var m = 0; m < municipiosCali.length; m++) {
+    var mInfo = municipiosCali[m];
+    var cuantos = verdesPorTown + (sobrantesTown > 0 ? 1 : 0);
+    if (sobrantesTown > 0) sobrantesTown--;
+
+    for (var i = 0; i < cuantos; i++) {
+      var lat = jitter(mInfo.lat, 0.007);
+      var lng = jitter(mInfo.lng, 0.007);
+      this.addSignalPing(lat, lng, mInfo.name + " • Señal", "ping--green");
+      verdesColocados++;
+    }
+  }
+
+  // ===== 5) Verdes extra (si aún faltan para llegar al total de verdes solicitado)
+  var verdesRestantes = Math.max(0, cfg.greens - verdesColocados);
+
+  // Respeta el 'count' total si lo usas como límite superior
+  var yaColocados = cfg.blues + cfg.yellows + cfg.reds + verdesColocados;
+  var margenTotal = Math.max(0, count - yaColocados);
+  var verdesExtra = Math.min(verdesRestantes, margenTotal);
+
+  // Esparce verdes adicionales usando tus puntos base
+  var usados = Math.min(verdesExtra, this.puntosValleCauca.length);
+  for (var j = 0; j < usados; j++) {
+    var base = this.puntosValleCauca[j];
+    var glat = jitter(base.lat, 0.06);
+    var glng = jitter(base.lng, 0.06);
+    this.addSignalPing(glat, glng, base.name + " • Señal", "ping--green");
+  }
+
+  // Si aún faltan verdes y quieres completar hasta 'count', rellena aleatorio en verde
+  var faltan = verdesExtra - usados;
+  for (var k = 0; k < faltan; k++) {
+    var glat2 = minLat + Math.random() * (maxLat - minLat);
+    var glng2 = minLng + Math.random() * (maxLng - minLng);
+    this.addSignalPing(glat2, glng2, "Cobertura regional", "ping--green");
   }
 };
 
 
+// === Geometría básica ===
+
+// Convierte [[lat,lng],...] a arreglo de puntos {x:lng, y:lat} para ray-cast
+UTMSimulation.prototype._toXY = function(polyLatLngs) {
+  return polyLatLngs.map(function(p){ return {x:p[1], y:p[0]}; });
+};
+
+// Prueba punto en polígono (ray casting)
+UTMSimulation.prototype._pointInPoly = function(lat, lng, polyLatLngs) {
+  var x = lng, y = lat;
+  var vs = this._toXY(polyLatLngs); // [{x,y},...]
+  var inside = false;
+  for (var i=0,j=vs.length-1; i<vs.length; j=i++) {
+    var xi=vs[i].x, yi=vs[i].y, xj=vs[j].x, yj=vs[j].y;
+    var intersect = ((yi>y)!==(yj>y)) &&
+      (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+};
+
+// Bounding box del polígono
+UTMSimulation.prototype._polyBBox = function(polyLatLngs){
+  var minLat=  90, maxLat= -90, minLng= 180, maxLng=-180;
+  for (var i=0;i<polyLatLngs.length;i++){
+    var p = polyLatLngs[i];
+    if (!p) continue;
+    var lat=p[0], lng=p[1];
+    if (lat<minLat) minLat=lat; if (lat>maxLat) maxLat=lat;
+    if (lng<minLng) minLng=lng; if (lng>maxLng) maxLng=lng;
+  }
+  return {minLat, maxLat, minLng, maxLng};
+};
+
+// Punto aleatorio dentro del polígono (rechazo simple sobre bbox)
+UTMSimulation.prototype._randomPointInPolygon = function(polyLatLngs, maxTries) {
+  if (!maxTries) maxTries = 200;
+  var bbox = this._polyBBox(polyLatLngs);
+  for (var t=0; t<maxTries; t++){
+    var lat = bbox.minLat + Math.random()*(bbox.maxLat-bbox.minLat);
+    var lng = bbox.minLng + Math.random()*(bbox.maxLng-bbox.minLng);
+    if (this._pointInPoly(lat, lng, polyLatLngs)) return [lat, lng];
+  }
+  // fallback: centroide aproximado (promedio simple)
+  var sumLat=0, sumLng=0, n=0;
+  for (var i=0;i<polyLatLngs.length;i++){ sumLat+=polyLatLngs[i][0]; sumLng+=polyLatLngs[i][1]; n++; }
+  return [sumLat/n, sumLng/n];
+};
+
+// === Crear el "mover" (punto) dentro de un polígono ===
+UTMSimulation.prototype.addMover = function(zoneData) {
+  var poly = zoneData.estimatedArea;          // [[lat,lng],...]
+  if (!poly || poly.length < 3) return;
+
+  var start = this._randomPointInPolygon(poly);
+  var icon = L.divIcon({
+    className: '',
+    html: '<div class="mover-dot"></div>',
+    iconSize: [8,8],
+    iconAnchor: [4,4]
+  });
+
+  var marker = L.marker(start, { icon }).addTo(this.map);
+
+  // Velocidades pequeñas en grados (~metros). Ajusta si quieres más rápido.
+  var vx = (Math.random()*2-1) * 0.00035; // ~ 35–40 m por tick aprox
+  var vy = (Math.random()*2-1) * 0.00035;
+
+  this.movers.push({
+    marker: marker,
+    polygonLatLngs: poly,
+    vx: vx, vy: vy
+  });
+};
+
+// === Animación de todos los movers ===
+UTMSimulation.prototype.tickMovers = function() {
+  for (var i=0; i<this.movers.length; i++){
+    var m = this.movers[i];
+    var pos = m.marker.getLatLng();
+    var newLat = pos.lat + m.vy;
+    var newLng = pos.lng + m.vx;
+
+    if (this._pointInPoly(newLat, newLng, m.polygonLatLngs)) {
+      m.marker.setLatLng([newLat, newLng]);
+    } else {
+      // Rebote sencillo: invierte dirección y prueba otro paso pequeño
+      m.vx = -m.vx;
+      m.vy = -m.vy;
+      var altLat = pos.lat + m.vy*0.8;
+      var altLng = pos.lng + m.vx*0.8;
+      if (this._pointInPoly(altLat, altLng, m.polygonLatLngs)) {
+        m.marker.setLatLng([altLat, altLng]);
+      } else {
+        // Si quedó atorado, reubícalo en un punto aleatorio interno
+        var reset = this._randomPointInPolygon(m.polygonLatLngs);
+        m.marker.setLatLng(reset);
+        // nueva dirección aleatoria
+        m.vx = (Math.random()*2-1) * 0.00035;
+        m.vy = (Math.random()*2-1) * 0.00035;
+      }
+    }
+  }
+};
+
+// Crea N punticos móviles dentro de polígonos ya creados
+UTMSimulation.prototype.spawnMovers = function(n){
+  if (!n) n = 52; // cantidad por defecto
+  var zones = Array.from(this.polygons.values());
+  // mezclar para que salgan en zonas aleatorias
+  zones.sort(function(){ return Math.random() - 0.5; });
+  for (var i=0; i<zones.length && this.movers.length<n; i++){
+    this.addMover(zones[i]);
+  }
+};
+
+
+// Borra todos los movers actuales (opcional si no quieres duplicados)
+UTMSimulation.prototype.clearMovers = function () {
+  for (var i = 0; i < this.movers.length; i++) {
+    this.movers[i].marker.remove();
+  }
+  this.movers = [];
+};
+
+// Crea un mover en CADA polígono existente (uno por zona)
+UTMSimulation.prototype.spawnMoversForAll = function () {
+  // evita duplicados: limpia antes (o quita esta línea si quieres acumular)
+  this.clearMovers();
+
+  var zones = Array.from(this.polygons.values());
+  for (var i = 0; i < zones.length; i++) {
+    this.addMover(zones[i]);
+  }
+  // feedback opcional
+  this.addAlert(zones.length + " movers creados (uno por polígono)", "success");
+};
+ 
 
 
   </script>
