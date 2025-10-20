@@ -8,8 +8,6 @@
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <!-- Plugin para rotar marcadores -->
-  <script src="https://unpkg.com/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.min.js"></script>
 
   <!-- Fuente -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -211,22 +209,27 @@
     ::-webkit-scrollbar-thumb{background:linear-gradient(180deg, #94a3b8, #64748b);border-radius:6px}
     ::-webkit-scrollbar-thumb:hover{background:#475569}
 
-    /* Drone icon */
-    .drone-icon{position:relative;width:28px;height:28px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
-    .drone-icon .pulse{
-      position:absolute; inset:0; width:48px; height:48px; left:50%; top:50%;
-      transform:translate(-50%, -50%);
-      background:rgba(37,99,235,.18);
-      border-radius:50%; animation:pulse 2s infinite; z-index:-1;
+    /* Polígonos mejorados - LÍNEA CONTINUA */
+    .polygon-commercial {
+      stroke: #ef4444;
+      stroke-width: 2;
+      fill: rgba(239, 68, 68, 0.15);
+      stroke-dasharray: none;
     }
-    @keyframes pulse{0%{transform:translate(-50%,-50%) scale(.55);opacity:1}100%{transform:translate(-50%,-50%) scale(1.25);opacity:0}}
 
-    /* Polígonos */
-    .leaflet-interactive.polygon-fill{stroke-dasharray:5 5; stroke-dashoffset:0; animation:dash 18s linear infinite}
-    @keyframes dash{to{stroke-dashoffset:-100}}
-    .polygon-commercial{stroke:var(--danger); fill:rgba(239,68,68,.25)}
-    .polygon-delivery{stroke:var(--primary); fill:rgba(37,99,235,.25)}
-    .polygon-surveillance{stroke:var(--secondary); fill:rgba(124,58,237,.25)}
+    .polygon-delivery {
+      stroke: #2563eb;
+      stroke-width: 2;
+      fill: rgba(37, 99, 235, 0.15);
+      stroke-dasharray: none;
+    }
+
+    .polygon-surveillance {
+      stroke: #7c3aed;
+      stroke-width: 2;
+      fill: rgba(124, 58, 237, 0.15);
+      stroke-dasharray: none;
+    }
 
     /* Batería */
     .battery-indicator{display:inline-block; width:64px; height:12px; background:var(--line); border-radius:6px; overflow:hidden; vertical-align:middle; margin-left:.35rem}
@@ -376,10 +379,10 @@
           <div class="panel-section">
             <h3 class="panel-title">📊 ESTADÍSTICAS EN TIEMPO REAL</h3>
             <div class="stats-grid">
-              <div class="stat-card"><div class="stat-value" id="totalDrones">0</div><div class="stat-label">Drones Activos</div></div>
-              <div class="stat-card"><div class="stat-value" id="activeFlights">0</div><div class="stat-label">Vuelos en Curso</div></div>
-              <div class="stat-card"><div class="stat-value" id="conflicts">0</div><div class="stat-label">Conflictos</div></div>
-              <div class="stat-card"><div class="stat-value" id="avgSpeed">0</div><div class="stat-label">Vel. Prom (km/h)</div></div>
+              <div class="stat-card"><div class="stat-value" id="totalDrones">0</div><div class="stat-label">Polígonos Activos</div></div>
+              <div class="stat-card"><div class="stat-value" id="activeFlights">0</div><div class="stat-label">Zonas Monitoreadas</div></div>
+              <div class="stat-card"><div class="stat-value" id="conflicts">0</div><div class="stat-label">Alertas</div></div>
+              <div class="stat-card"><div class="stat-value" id="avgSpeed">0</div><div class="stat-label">Operaciones/día</div></div>
             </div>
           </div>
 
@@ -387,20 +390,20 @@
             <h3 class="panel-title">📡 ESTADO DEL SISTEMA</h3>
             <div class="system-status">
               <div class="status-card">
-                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Simulación: <strong>ACTIVA</strong></span></div>
+                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Sistema: <strong>ACTIVO</strong></span></div>
                 <div class="metric-item"><span class="metric-label">Tiempo ejecución:</span><span class="metric-value" id="uptime">00:00:00</span></div>
               </div>
               <div class="status-card">
-                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Drones sin ubicación: <strong id="noLocationDrones">0</strong></span></div>
-                <div class="metric-item"><span class="metric-label">En zonas rurales:</span><span class="metric-value" id="ruralDrones">0</span></div>
+                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Polígonos rurales: <strong id="noLocationDrones">0</strong></span></div>
+                <div class="metric-item"><span class="metric-label">En Cali:</span><span class="metric-value" id="ruralDrones">0</span></div>
               </div>
               <div class="status-card">
-                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Polígonos activos: <strong id="activePolygons">0</strong></span></div>
-                <div class="metric-item"><span class="metric-label">Actualizados:</span><span class="metric-value" id="updatedPolygons">0</span></div>
+                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Polígonos urbanos: <strong id="activePolygons">0</strong></span></div>
+                <div class="metric-item"><span class="metric-label">En Palmira:</span><span class="metric-value" id="updatedPolygons">0</span></div>
               </div>
               <div class="status-card">
-                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Drones urbanos: <strong id="urbanDrones">0</strong></span></div>
-                <div class="metric-item"><span class="metric-label">En Cali:</span><span class="metric-value" id="caliDrones">0</span></div>
+                <div class="status-row"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span><span>Total zonas: <strong id="urbanDrones">0</strong></span></div>
+                <div class="metric-item"><span class="metric-label">Actualizado:</span><span class="metric-value" id="caliDrones">0</span></div>
               </div>
             </div>
           </div>
@@ -438,8 +441,8 @@
         <button class="panel-toggle" id="toggleDronesPanel">✕</button>
         <div class="content-wrapper">
           <div class="panel-section">
-            <h3 class="panel-title">✈️ DRONES ACTIVOS</h3>
-            <div class="search-box"><input type="text" id="droneSearch" placeholder="Buscar dron..."></div>
+            <h3 class="panel-title">✈️ ZONAS DE OPERACIÓN</h3>
+            <div class="search-box"><input type="text" id="droneSearch" placeholder="Buscar zona..."></div>
           </div>
           <div class="panel-section scrollable"><div id="dronesList" class="drones-list"></div></div>
         </div>
@@ -474,20 +477,11 @@
 
     class UTMSimulation {
       constructor(){
-        this.drones = new Map();
-        this.isRunning = true;
-        this.simulationSpeed = 3;
-        this.conflictCount = 0;
-
-        this.map = null;
-        this.droneMarkers = new Map();
-        this.routeLines = new Map();
         this.polygons = new Map();
-
+        this.isRunning = true;
         this.startTime = new Date();
-        this.prevTs = performance.now();
         this.lastUiUpdate = 0;
-        this.uiIntervalMs = 500;
+        this.uiIntervalMs = 1000;
 
         this.personasNaturales = [
           'Carlos Rodríguez','María García','José Martínez','Ana López',
@@ -505,7 +499,6 @@
   { name:"Cali Oriente",      lat:3.4500, lng:-76.5000, type:"urbana" },
   { name:"Cali Occidente",    lat:3.4400, lng:-76.5600, type:"urbana" },
 
-  
   // Zonas alrededor de Cali
   { name:"Pance",             lat:3.3800, lng:-76.5800, type:"rural" },
   { name:"Menga",             lat:3.5200, lng:-76.5100, type:"rural" },
@@ -518,30 +511,24 @@
   { name:"San Fernando",      lat:3.4350, lng:-76.5350, type:"rural" },
   { name:"Granada",           lat:3.4550, lng:-76.5250, type:"rural" },
   { name:"Santa Mónica",      lat:3.4650, lng:-76.5150, type:"rural" },
-  
-  
-  // 🌟🌟 MUCHOS MÁS POLÍGONOS EN PALMIRA Y ALREDEDORES 🌟🌟
+
+  // Palmira y alrededores
   { name:"Palmira Centro",    lat:3.5394, lng:-76.3036, type:"urbana" },
   { name:"Palmira Norte",     lat:3.5600, lng:-76.3000, type:"urbana" },
   { name:"Palmira Sur",       lat:3.5200, lng:-76.3100, type:"urbana" },
   { name:"Palmira Este",      lat:3.5400, lng:-76.2800, type:"urbana" },
   { name:"Palmira Oeste",     lat:3.5350, lng:-76.3300, type:"urbana" },
-  
-  // Áreas rurales de Palmira - muchos polígonos
   { name:"Cerrito",           lat:3.5800, lng:-76.2500, type:"rural" },
   { name:"Rozo",              lat:3.5100, lng:-76.3500, type:"rural" },
   { name:"Bolo La Italia",    lat:3.6000, lng:-76.3200, type:"rural" },
-  { name:"Obando",            lat:3.6200, lng:-76.2800, type:"rural" },
+  { name:"Obando (Palmira)",  lat:3.6200, lng:-76.2800, type:"rural" },
   { name:"El Bungal",         lat:3.5500, lng:-76.2700, type:"rural" },
   { name:"La Rivera",         lat:3.5300, lng:-76.2600, type:"rural" },
   { name:"El Porvenir",       lat:3.5700, lng:-76.2900, type:"rural" },
   { name:"San Isidro",        lat:3.5900, lng:-76.3100, type:"rural" },
   { name:"La Esmeralda",      lat:3.5600, lng:-76.3400, type:"rural" },
-  { name:"El Recuerdo",       lat:3.5100, lng:-76.2900, type:"rural" },
-  { name:"Brisas de Palmira", lat:3.5450, lng:-76.3150, type:"rural" },
-  { name:"Villa del Prado",   lat:3.5250, lng:-76.3250, type:"rural" },
-  
-  // Otras ciudades del Valle
+
+  // Otras ciudades del Valle (existentes)
   { name:"Yumbo",             lat:3.5823, lng:-76.4914, type:"urbana" },
   { name:"Jamundí",           lat:3.2627, lng:-76.5430, type:"urbana" },
   { name:"Candelaria",        lat:3.4065, lng:-76.3485, type:"urbana" },
@@ -553,111 +540,476 @@
   { name:"Restrepo",          lat:3.8333, lng:-76.5000, type:"rural" },
   { name:"Riofrío",           lat:4.1500, lng:-76.2833, type:"rural" },
 
-  // 🌟🌟🌟 NUEVOS POLÍGONOS RURALES - VALLE DEL CAUCA 🌟🌟🌟
-  
-  // Norte del Valle - Zona de caña de azúcar
+  // Más zonas rurales - AÑADIDAS MÁS ZONAS (existentes)
   { name:"El Placer",         lat:3.8500, lng:-76.3500, type:"rural" },
   { name:"La Paila",          lat:3.7800, lng:-76.2800, type:"rural" },
-  { name:"Roldanillo",        lat:4.4167, lng:-76.1500, type:"rural" },
-  { name:"Zarzal",            lat:4.3983, lng:-76.0772, type:"rural" },
-  { name:"La Unión",          lat:4.5333, lng:-76.1000, type:"rural" },
-  { name:"La Victoria",       lat:4.5244, lng:-76.0361, type:"rural" },
-  { name:"El Dovio",          lat:4.5083, lng:-76.2361, type:"rural" },
-  { name:"Alcalá",            lat:4.6747, lng:-75.7825, type:"rural" },
-  { name:"Ulloa",             lat:4.7044, lng:-75.7408, type:"rural" },
-  { name:"Cartago",           lat:4.7464, lng:-75.9117, type:"rural" },
-  { name:"Ansermanuevo",      lat:4.7972, lng:-75.9958, type:"rural" },
-  
-  // Centro del Valle - Zonas agrícolas
   { name:"Pradera",           lat:3.4211, lng:-76.2433, type:"rural" },
   { name:"Florida",           lat:3.3275, lng:-76.2386, type:"rural" },
   { name:"El Cerrito",        lat:3.6847, lng:-76.3136, type:"rural" },
-  { name:"Ginebra",           lat:3.7333, lng:-76.2667, type:"rural" },
-  { name:"Guacarí",           lat:3.7667, lng:-76.3333, type:"rural" },
   { name:"San Pedro",         lat:3.9956, lng:-76.2289, type:"rural" },
   { name:"Tuluá Rural",       lat:4.0867, lng:-76.2000, type:"rural" },
   { name:"Andalucía",         lat:4.1703, lng:-76.1706, type:"rural" },
   { name:"Bugalagrande",      lat:4.2125, lng:-76.1556, type:"rural" },
-  { name:"Riofrío",           lat:4.1500, lng:-76.2833, type:"rural" },
-  
-  // Sur del Valle - Zona montañosa
   { name:"El Águila",         lat:4.9083, lng:-76.1167, type:"rural" },
   { name:"El Cairo",          lat:4.7600, lng:-76.2219, type:"rural" },
   { name:"La Celia",          lat:5.0033, lng:-76.0033, type:"rural" },
   { name:"Versalles",         lat:4.5750, lng:-76.1994, type:"rural" },
   { name:"Argelia",           lat:4.7278, lng:-76.1214, type:"rural" },
   { name:"El Danubio",        lat:3.8500, lng:-76.6500, type:"rural" },
-  { name:"Buenaventura Rural",lat:3.8800, lng:-77.0300, type:"rural" },
-  { name:"Córdoba",           lat:4.3911, lng:-75.6875, type:"rural" },
-  
-  // Zona Pacífica - Corredor Buenaventura
   { name:"Cisneros",          lat:3.8500, lng:-76.9500, type:"rural" },
   { name:"Sabaletas",         lat:3.8000, lng:-77.0800, type:"rural" },
-  { name:"Cajambre",          lat:3.7200, lng:-77.2500, type:"rural" },
-  { name:"Raposo",            lat:3.8300, lng:-77.1500, type:"rural" },
-  { name:"Zabaletas",         lat:3.7800, lng:-77.1200, type:"rural" },
-  { name:"Chicoral",          lat:3.6500, lng:-76.8500, type:"rural" },
-  { name:"Bitaco",            lat:3.5800, lng:-76.7500, type:"rural" },
-  
-  // Corredor Cali-Buenaventura
   { name:"Loboguerrero",      lat:3.9200, lng:-76.5200, type:"rural" },
   { name:"Queremal",          lat:3.5300, lng:-76.7000, type:"rural" },
-  { name:"El Queremal",       lat:3.5600, lng:-76.6800, type:"rural" },
-  { name:"La Elvira",         lat:3.4800, lng:-76.6200, type:"rural" },
-  { name:"La Leonera",        lat:3.5100, lng:-76.5800, type:"rural" },
-  
-  // Valle del Río Cauca - Zonas planas
   { name:"Aguaclara",         lat:3.6200, lng:-76.2800, type:"rural" },
   { name:"Mediacanoa",        lat:3.6800, lng:-76.3200, type:"rural" },
-  { name:"Ríofrío",           lat:4.1500, lng:-76.2833, type:"rural" },
-  { name:"La Manuelita",      lat:3.5900, lng:-76.3100, type:"rural" },
-  { name:"El Vínculo",        lat:3.6100, lng:-76.2900, type:"rural" },
-  { name:"Santa Elena",       lat:3.6400, lng:-76.2700, type:"rural" },
-  
-  // Zona de Ladera - Corregimientos altos
   { name:"La Sirena",         lat:3.5200, lng:-76.5900, type:"rural" },
   { name:"Los Andes",         lat:3.4800, lng:-76.5600, type:"rural" },
   { name:"La Castilla",       lat:3.5400, lng:-76.5400, type:"rural" },
-  { name:"Villacarmelo",      lat:3.3500, lng:-76.6000, type:"rural" },
-  { name:"Pichindé",          lat:3.5200, lng:-76.6200, type:"rural" },
-  { name:"Felidia",           lat:3.4200, lng:-76.6200, type:"rural" },
-  { name:"La Elisa",          lat:3.4500, lng:-76.5800, type:"rural" },
-  
-  // Zona de Yumbo y alrededores industriales
   { name:"Montalvo",          lat:3.6200, lng:-76.4800, type:"rural" },
   { name:"Dapa",              lat:3.5800, lng:-76.5200, type:"rural" },
-  { name:"La Paz",            lat:3.6000, lng:-76.4400, type:"rural" },
-  { name:"Santa Inés",        lat:3.5500, lng:-76.4600, type:"rural" },
-  { name:"El Vallado",        lat:3.5300, lng:-76.4200, type:"rural" },
-  
-  // Zona de Jamundí y sur
   { name:"Robles",            lat:3.2500, lng:-76.5300, type:"rural" },
   { name:"Villa Colombia",    lat:3.2200, lng:-76.5500, type:"rural" },
-  { name:"El Bolo",           lat:3.2800, lng:-76.4800, type:"rural" },
-  { name:"La Habana",         lat:3.3000, lng:-76.5200, type:"rural" },
-  { name:"Potrerito",         lat:3.3200, lng:-76.5000, type:"rural" },
-  
-  // Zona de Candelaria y oriente
   { name:"Santa Bárbara",     lat:3.4500, lng:-76.3800, type:"rural" },
-  { name:"El Hormiguero",     lat:3.4800, lng:-76.4400, type:"rural" },
   { name:"La Pampa",          lat:3.4200, lng:-76.3500, type:"rural" },
-  { name:"Brisas del Cauca",  lat:3.3800, lng:-76.3200, type:"rural" },
-  { name:"El Recuerdo",       lat:3.5100, lng:-76.2900, type:"rural" },
-  
-  // Zonas cafeteras del norte
   { name:"La Marina",         lat:4.4500, lng:-76.1200, type:"rural" },
   { name:"Bolívar",           lat:4.3386, lng:-76.1842, type:"rural" },
-  { name:"Sevilla",           lat:4.2689, lng:-75.9311, type:"rural" },
-  { name:"Caicedonia",        lat:4.3325, lng:-75.8278, type:"rural" },
-  { name:"El Paraíso",        lat:4.3800, lng:-75.8900, type:"rural" },
-  
-  // Zonas de reserva natural
   { name:"Parque Farallones", lat:3.4500, lng:-76.6500, type:"rural" },
   { name:"Reserva Pance",     lat:3.3500, lng:-76.6500, type:"rural" },
   { name:"Alto Anchicayá",    lat:3.6000, lng:-76.8000, type:"rural" },
   { name:"San Cipriano",      lat:3.7200, lng:-76.9000, type:"rural" },
-  { name:"Kilómetro 18",      lat:3.5500, lng:-76.7200, type:"rural" }
+  { name:"Kilómetro 18",      lat:3.5500, lng:-76.7200, type:"rural" },
+  { name:"La Elvira",         lat:3.4800, lng:-76.6200, type:"rural" },
+  { name:"La Leonera",        lat:3.5100, lng:-76.5800, type:"rural" },
+  { name:"El Vínculo",        lat:3.6100, lng:-76.2900, type:"rural" },
+  { name:"Santa Elena",       lat:3.6400, lng:-76.2700, type:"rural" },
+  { name:"Pichindé",          lat:3.5200, lng:-76.6200, type:"rural" },
+
+  // ===============================
+  // NUEVOS MUNICIPIOS Y POLÍGONOS
+  // ===============================
+
+  // YUMBO – 10 zonas
+  { name:"Yumbo Zona 1", lat:3.5850, lng:-76.4950, type:"urbana" },
+  { name:"Yumbo Zona 2", lat:3.5900, lng:-76.4850, type:"urbana" },
+  { name:"Yumbo Zona 3", lat:3.5750, lng:-76.5000, type:"urbana" },
+  { name:"Yumbo Zona 4", lat:3.5950, lng:-76.5050, type:"urbana" },
+  { name:"Yumbo Zona 5", lat:3.5800, lng:-76.4800, type:"urbana" },
+  { name:"Yumbo Zona 6", lat:3.6000, lng:-76.4700, type:"rural" },
+  { name:"Yumbo Zona 7", lat:3.5650, lng:-76.5100, type:"rural" },
+  { name:"Yumbo Zona 8", lat:3.5700, lng:-76.4750, type:"rural" },
+  { name:"Yumbo Zona 9", lat:3.6100, lng:-76.4900, type:"rural" },
+  { name:"Yumbo Zona 10",lat:3.5550, lng:-76.4850, type:"rural" },
+
+  { name:"Yumbo Zona 11", lat:3.5960, lng:-76.4890, type:"urbana" },
+  { name:"Yumbo Zona 12", lat:3.5925, lng:-76.5025, type:"urbana" },
+  { name:"Yumbo Zona 13", lat:3.5860, lng:-76.5090, type:"urbana" },
+  { name:"Yumbo Zona 14", lat:3.5785, lng:-76.5060, type:"urbana" },
+  { name:"Yumbo Zona 15", lat:3.5730, lng:-76.4975, type:"urbana" },
+  { name:"Yumbo Zona 16", lat:3.5755, lng:-76.4865, type:"urbana" },
+  { name:"Yumbo Zona 17", lat:3.5830, lng:-76.4805, type:"urbana" },
+  { name:"Yumbo Zona 18", lat:3.5920, lng:-76.4815, type:"urbana" },
+  { name:"Yumbo Zona 19", lat:3.6000, lng:-76.4930, type:"urbana" },
+  { name:"Yumbo Zona 20", lat:3.5885, lng:-76.4985, type:"urbana" },
+
+  // Rurales (anillo externo, más separados)
+  { name:"Yumbo Zona 21", lat:3.6075, lng:-76.5065, type:"rural" },
+  { name:"Yumbo Zona 22", lat:3.6030, lng:-76.5210, type:"rural" },
+  { name:"Yumbo Zona 23", lat:3.5905, lng:-76.5235, type:"rural" },
+  { name:"Yumbo Zona 24", lat:3.5760, lng:-76.5190, type:"rural" },
+  { name:"Yumbo Zona 25", lat:3.5635, lng:-76.5070, type:"rural" },
+  { name:"Yumbo Zona 26", lat:3.5600, lng:-76.4925, type:"rural" },
+  { name:"Yumbo Zona 27", lat:3.5655, lng:-76.4780, type:"rural" },
+  { name:"Yumbo Zona 28", lat:3.5800, lng:-76.4685, type:"rural" },
+  { name:"Yumbo Zona 29", lat:3.5975, lng:-76.4725, type:"rural" },
+  { name:"Yumbo Zona 30", lat:3.6100, lng:-76.4880, type:"rural" },
+
+  // JAMUNDÍ – 10 zonas
+  { name:"Jamundí Zona 1", lat:3.2650, lng:-76.5450, type:"urbana" },
+  { name:"Jamundí Zona 2", lat:3.2700, lng:-76.5350, type:"urbana" },
+  { name:"Jamundí Zona 3", lat:3.2550, lng:-76.5500, type:"urbana" },
+  { name:"Jamundí Zona 4", lat:3.2750, lng:-76.5550, type:"urbana" },
+  { name:"Jamundí Zona 5", lat:3.2600, lng:-76.5300, type:"urbana" },
+  { name:"Jamundí Zona 6", lat:3.2400, lng:-76.5700, type:"rural" },
+  { name:"Jamundí Zona 7", lat:3.2500, lng:-76.5200, type:"rural" },
+  { name:"Jamundí Zona 8", lat:3.2800, lng:-76.5200, type:"rural" },
+  { name:"Jamundí Zona 9", lat:3.3000, lng:-76.5600, type:"rural" },
+  { name:"Jamundí Zona 10",lat:3.2300, lng:-76.5900, type:"rural" },
+
+  { name:"Jamundí Zona 11", lat:3.2720, lng:-76.5480, type:"urbana" },
+  { name:"Jamundí Zona 12", lat:3.2685, lng:-76.5555, type:"urbana" },
+  { name:"Jamundí Zona 13", lat:3.2605, lng:-76.5600, type:"urbana" },
+  { name:"Jamundí Zona 14", lat:3.2520, lng:-76.5530, type:"urbana" },
+  { name:"Jamundí Zona 15", lat:3.2475, lng:-76.5420, type:"urbana" },
+  { name:"Jamundí Zona 16", lat:3.2525, lng:-76.5320, type:"urbana" },
+  { name:"Jamundí Zona 17", lat:3.2620, lng:-76.5250, type:"urbana" },
+  { name:"Jamundí Zona 18", lat:3.2735, lng:-76.5280, type:"urbana" },
+  { name:"Jamundí Zona 19", lat:3.2805, lng:-76.5400, type:"urbana" },
+  { name:"Jamundí Zona 20", lat:3.2580, lng:-76.5450, type:"urbana" },
+
+  // Rurales (anillo externo disperso)
+  { name:"Jamundí Zona 21", lat:3.3000, lng:-76.5750, type:"rural" },
+  { name:"Jamundí Zona 22", lat:3.2850, lng:-76.5900, type:"rural" },
+  { name:"Jamundí Zona 23", lat:3.2700, lng:-76.6000, type:"rural" },
+  { name:"Jamundí Zona 24", lat:3.2500, lng:-76.6050, type:"rural" },
+  { name:"Jamundí Zona 25", lat:3.2350, lng:-76.6000, type:"rural" },
+  { name:"Jamundí Zona 26", lat:3.2250, lng:-76.5800, type:"rural" },
+  { name:"Jamundí Zona 27", lat:3.2300, lng:-76.5550, type:"rural" },
+  { name:"Jamundí Zona 28", lat:3.2400, lng:-76.5150, type:"rural" },
+  { name:"Jamundí Zona 29", lat:3.2650, lng:-76.5100, type:"rural" },
+  { name:"Jamundí Zona 30", lat:3.2950, lng:-76.5250, type:"rural" },
+
+  // CANDELARIA – 10 zonas
+  { name:"Candelaria Zona 1", lat:3.4100, lng:-76.3500, type:"urbana" },
+  { name:"Candelaria Zona 2", lat:3.4150, lng:-76.3400, type:"urbana" },
+  { name:"Candelaria Zona 3", lat:3.4000, lng:-76.3550, type:"urbana" },
+  { name:"Candelaria Zona 4", lat:3.4200, lng:-76.3600, type:"urbana" },
+  { name:"Candelaria Zona 5", lat:3.4050, lng:-76.3300, type:"urbana" },
+  { name:"Candelaria Zona 6", lat:3.3900, lng:-76.3700, type:"rural" },
+  { name:"Candelaria Zona 7", lat:3.4300, lng:-76.3450, type:"rural" },
+  { name:"Candelaria Zona 8", lat:3.3950, lng:-76.3200, type:"rural" },
+  { name:"Candelaria Zona 9", lat:3.4400, lng:-76.3550, type:"rural" },
+  { name:"Candelaria Zona 10",lat:3.3800, lng:-76.3400, type:"rural" },
+
+  { name:"Candelaria Zona 11", lat:3.4170, lng:-76.3580, type:"urbana" },
+  { name:"Candelaria Zona 12", lat:3.4125, lng:-76.3650, type:"urbana" },
+  { name:"Candelaria Zona 13", lat:3.4050, lng:-76.3685, type:"urbana" },
+  { name:"Candelaria Zona 14", lat:3.3970, lng:-76.3620, type:"urbana" },
+  { name:"Candelaria Zona 15", lat:3.3925, lng:-76.3505, type:"urbana" },
+  { name:"Candelaria Zona 16", lat:3.3955, lng:-76.3380, type:"urbana" },
+  { name:"Candelaria Zona 17", lat:3.4030, lng:-76.3305, type:"urbana" },
+  { name:"Candelaria Zona 18", lat:3.4140, lng:-76.3275, type:"urbana" },
+  { name:"Candelaria Zona 19", lat:3.4225, lng:-76.3355, type:"urbana" },
+  { name:"Candelaria Zona 20", lat:3.4085, lng:-76.3450, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"Candelaria Zona 21", lat:3.4500, lng:-76.3700, type:"rural" },
+  { name:"Candelaria Zona 22", lat:3.4400, lng:-76.3900, type:"rural" },
+  { name:"Candelaria Zona 23", lat:3.4200, lng:-76.4000, type:"rural" },
+  { name:"Candelaria Zona 24", lat:3.3950, lng:-76.4050, type:"rural" },
+  { name:"Candelaria Zona 25", lat:3.3750, lng:-76.3950, type:"rural" },
+  { name:"Candelaria Zona 26", lat:3.3650, lng:-76.3750, type:"rural" },
+  { name:"Candelaria Zona 27", lat:3.3700, lng:-76.3500, type:"rural" },
+  { name:"Candelaria Zona 28", lat:3.3800, lng:-76.3150, type:"rural" },
+  { name:"Candelaria Zona 29", lat:3.4050, lng:-76.3050, type:"rural" },
+  { name:"Candelaria Zona 30", lat:3.4350, lng:-76.3200, type:"rural" },
+
+  // BUENAVENTURA – 10 zonas
+  { name:"Buenaventura Zona 1", lat:3.8850, lng:-77.0050, type:"urbana" },
+  { name:"Buenaventura Zona 2", lat:3.8950, lng:-76.9950, type:"urbana" },
+  { name:"Buenaventura Zona 3", lat:3.8750, lng:-77.0100, type:"urbana" },
+  { name:"Buenaventura Zona 4", lat:3.9000, lng:-77.0200, type:"urbana" },
+  { name:"Buenaventura Zona 5", lat:3.8900, lng:-76.9850, type:"urbana" },
+  { name:"Buenaventura Zona 6", lat:3.8600, lng:-77.0300, type:"rural" },
+  { name:"Buenaventura Zona 7", lat:3.9100, lng:-77.0000, type:"rural" },
+  { name:"Buenaventura Zona 8", lat:3.8700, lng:-76.9700, type:"rural" },
+  { name:"Buenaventura Zona 9", lat:3.9150, lng:-77.0400, type:"rural" },
+  { name:"Buenaventura Zona 10",lat:3.8450, lng:-77.0150, type:"rural" },
+
+  { name:"Buenaventura Zona 11", lat:3.8980, lng:-77.0120, type:"urbana" },
+  { name:"Buenaventura Zona 12", lat:3.8925, lng:-77.0225, type:"urbana" },
+  { name:"Buenaventura Zona 13", lat:3.8840, lng:-77.0180, type:"urbana" },
+  { name:"Buenaventura Zona 14", lat:3.8755, lng:-77.0055, type:"urbana" },
+  { name:"Buenaventura Zona 15", lat:3.8805, lng:-76.9920, type:"urbana" },
+  { name:"Buenaventura Zona 16", lat:3.8920, lng:-76.9800, type:"urbana" },
+  { name:"Buenaventura Zona 17", lat:3.9050, lng:-76.9870, type:"urbana" },
+  { name:"Buenaventura Zona 18", lat:3.9100, lng:-77.0100, type:"urbana" },
+  { name:"Buenaventura Zona 19", lat:3.8995, lng:-77.0300, type:"urbana" },
+  { name:"Buenaventura Zona 20", lat:3.8800, lng:-77.0255, type:"urbana" },
+
+  // Rurales (anillo externo y costa)
+  { name:"Buenaventura Zona 21", lat:3.9300, lng:-77.0500, type:"rural" },
+  { name:"Buenaventura Zona 22", lat:3.9500, lng:-77.0700, type:"rural" },
+  { name:"Buenaventura Zona 23", lat:3.9050, lng:-77.0750, type:"rural" },
+  { name:"Buenaventura Zona 24", lat:3.8800, lng:-77.0850, type:"rural" },
+  { name:"Buenaventura Zona 25", lat:3.8550, lng:-77.0800, type:"rural" },
+  { name:"Buenaventura Zona 26", lat:3.8300, lng:-77.0600, type:"rural" },
+  { name:"Buenaventura Zona 27", lat:3.8150, lng:-77.0300, type:"rural" },
+  { name:"Buenaventura Zona 28", lat:3.8250, lng:-76.9950, type:"rural" },
+  { name:"Buenaventura Zona 29", lat:3.8500, lng:-76.9650, type:"rural" },
+  { name:"Buenaventura Zona 30", lat:3.8900, lng:-76.9500, type:"rural" },
+
+  // TULUÁ – 10 zonas
+  { name:"Tuluá Zona 1", lat:4.0900, lng:-76.1950, type:"urbana" },
+  { name:"Tuluá Zona 2", lat:4.0950, lng:-76.1850, type:"urbana" },
+  { name:"Tuluá Zona 3", lat:4.0800, lng:-76.2050, type:"urbana" },
+  { name:"Tuluá Zona 4", lat:4.1000, lng:-76.2100, type:"urbana" },
+  { name:"Tuluá Zona 5", lat:4.0850, lng:-76.1800, type:"urbana" },
+  { name:"Tuluá Zona 6", lat:4.1100, lng:-76.2200, type:"rural" },
+  { name:"Tuluá Zona 7", lat:4.0700, lng:-76.2250, type:"rural" },
+  { name:"Tuluá Zona 8", lat:4.1200, lng:-76.2000, type:"rural" },
+  { name:"Tuluá Zona 9", lat:4.0600, lng:-76.1900, type:"rural" },
+  { name:"Tuluá Zona 10",lat:4.0950, lng:-76.2350, type:"rural" },
+
+  { name:"Tuluá Zona 11", lat:4.1020, lng:-76.1970, type:"urbana" },
+  { name:"Tuluá Zona 12", lat:4.0970, lng:-76.2055, type:"urbana" },
+  { name:"Tuluá Zona 13", lat:4.0890, lng:-76.2120, type:"urbana" },
+  { name:"Tuluá Zona 14", lat:4.0805, lng:-76.1980, type:"urbana" },
+  { name:"Tuluá Zona 15", lat:4.0875, lng:-76.1900, type:"urbana" },
+  { name:"Tuluá Zona 16", lat:4.0950, lng:-76.1750, type:"urbana" },
+  { name:"Tuluá Zona 17", lat:4.1050, lng:-76.1825, type:"urbana" },
+  { name:"Tuluá Zona 18", lat:4.1105, lng:-76.1950, type:"urbana" },
+  { name:"Tuluá Zona 19", lat:4.0985, lng:-76.2200, type:"urbana" },
+  { name:"Tuluá Zona 20", lat:4.0830, lng:-76.2205, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"Tuluá Zona 21", lat:4.1300, lng:-76.2400, type:"rural" },
+  { name:"Tuluá Zona 22", lat:4.1150, lng:-76.2550, type:"rural" },
+  { name:"Tuluá Zona 23", lat:4.0950, lng:-76.2600, type:"rural" },
+  { name:"Tuluá Zona 24", lat:4.0700, lng:-76.2550, type:"rural" },
+  { name:"Tuluá Zona 25", lat:4.0550, lng:-76.2400, type:"rural" },
+  { name:"Tuluá Zona 26", lat:4.0500, lng:-76.2150, type:"rural" },
+  { name:"Tuluá Zona 27", lat:4.0550, lng:-76.1850, type:"rural" },
+  { name:"Tuluá Zona 28", lat:4.0700, lng:-76.1650, type:"rural" },
+  { name:"Tuluá Zona 29", lat:4.1000, lng:-76.1600, type:"rural" },
+  { name:"Tuluá Zona 30", lat:4.1200, lng:-76.1750, type:"rural" },
+
+  // BUGA – 10 zonas
+  { name:"Buga Zona 1", lat:3.9050, lng:-76.3000, type:"urbana" },
+  { name:"Buga Zona 2", lat:3.9100, lng:-76.2900, type:"urbana" },
+  { name:"Buga Zona 3", lat:3.8950, lng:-76.3050, type:"urbana" },
+  { name:"Buga Zona 4", lat:3.9150, lng:-76.3100, type:"urbana" },
+  { name:"Buga Zona 5", lat:3.9000, lng:-76.2850, type:"urbana" },
+  { name:"Buga Zona 6", lat:3.9250, lng:-76.3200, type:"rural" },
+  { name:"Buga Zona 7", lat:3.8800, lng:-76.3300, type:"rural" },
+  { name:"Buga Zona 8", lat:3.9350, lng:-76.2950, type:"rural" },
+  { name:"Buga Zona 9", lat:3.8900, lng:-76.2750, type:"rural" },
+  { name:"Buga Zona 10",lat:3.9200, lng:-76.3400, type:"rural" },
+
+  { name:"Buga Zona 11", lat:3.9085, lng:-76.3055, type:"urbana" },
+  { name:"Buga Zona 12", lat:3.9120, lng:-76.3150, type:"urbana" },
+  { name:"Buga Zona 13", lat:3.9000, lng:-76.3180, type:"urbana" },
+  { name:"Buga Zona 14", lat:3.8920, lng:-76.3105, type:"urbana" },
+  { name:"Buga Zona 15", lat:3.8880, lng:-76.2980, type:"urbana" },
+  { name:"Buga Zona 16", lat:3.8935, lng:-76.2880, type:"urbana" },
+  { name:"Buga Zona 17", lat:3.9040, lng:-76.2800, type:"urbana" },
+  { name:"Buga Zona 18", lat:3.9165, lng:-76.2835, type:"urbana" },
+  { name:"Buga Zona 19", lat:3.9225, lng:-76.2955, type:"urbana" },
+  { name:"Buga Zona 20", lat:3.9055, lng:-76.2920, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"Buga Zona 21", lat:3.9400, lng:-76.3250, type:"rural" },
+  { name:"Buga Zona 22", lat:3.9500, lng:-76.3450, type:"rural" },
+  { name:"Buga Zona 23", lat:3.9300, lng:-76.3600, type:"rural" },
+  { name:"Buga Zona 24", lat:3.9050, lng:-76.3650, type:"rural" },
+  { name:"Buga Zona 25", lat:3.8800, lng:-76.3600, type:"rural" },
+  { name:"Buga Zona 26", lat:3.8650, lng:-76.3400, type:"rural" },
+  { name:"Buga Zona 27", lat:3.8600, lng:-76.3100, type:"rural" },
+  { name:"Buga Zona 28", lat:3.8700, lng:-76.2750, type:"rural" },
+  { name:"Buga Zona 29", lat:3.8950, lng:-76.2600, type:"rural" },
+  { name:"Buga Zona 30", lat:3.9200, lng:-76.2550, type:"rural" },
+
+  // CARTAGO – 10 zonas
+  { name:"Cartago Zona 1", lat:4.7480, lng:-75.9150, type:"urbana" },
+  { name:"Cartago Zona 2", lat:4.7520, lng:-75.9050, type:"urbana" },
+  { name:"Cartago Zona 3", lat:4.7400, lng:-75.9200, type:"urbana" },
+  { name:"Cartago Zona 4", lat:4.7580, lng:-75.9250, type:"urbana" },
+  { name:"Cartago Zona 5", lat:4.7460, lng:-75.9000, type:"urbana" },
+  { name:"Cartago Zona 6", lat:4.7650, lng:-75.9400, type:"rural" },
+  { name:"Cartago Zona 7", lat:4.7350, lng:-75.9450, type:"rural" },
+  { name:"Cartago Zona 8", lat:4.7720, lng:-75.9150, type:"rural" },
+  { name:"Cartago Zona 9", lat:4.7280, lng:-75.9050, type:"rural" },
+  { name:"Cartago Zona 10",lat:4.7550, lng:-75.9550, type:"rural" },
+
+  { name:"Cartago Zona 11", lat:4.7540, lng:-75.9200, type:"urbana" },
+  { name:"Cartago Zona 12", lat:4.7600, lng:-75.9105, type:"urbana" },
+  { name:"Cartago Zona 13", lat:4.7485, lng:-75.9300, type:"urbana" },
+  { name:"Cartago Zona 14", lat:4.7420, lng:-75.9100, type:"urbana" },
+  { name:"Cartago Zona 15", lat:4.7385, lng:-75.9005, type:"urbana" },
+  { name:"Cartago Zona 16", lat:4.7455, lng:-75.8920, type:"urbana" },
+  { name:"Cartago Zona 17", lat:4.7560, lng:-75.8950, type:"urbana" },
+  { name:"Cartago Zona 18", lat:4.7640, lng:-75.9025, type:"urbana" },
+  { name:"Cartago Zona 19", lat:4.7705, lng:-75.9250, type:"urbana" },
+  { name:"Cartago Zona 20", lat:4.7500, lng:-75.9355, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"Cartago Zona 21", lat:4.7850, lng:-75.9450, type:"rural" },
+  { name:"Cartago Zona 22", lat:4.8000, lng:-75.9700, type:"rural" },
+  { name:"Cartago Zona 23", lat:4.7700, lng:-75.9800, type:"rural" },
+  { name:"Cartago Zona 24", lat:4.7450, lng:-75.9900, type:"rural" },
+  { name:"Cartago Zona 25", lat:4.7200, lng:-75.9750, type:"rural" },
+  { name:"Cartago Zona 26", lat:4.7100, lng:-75.9500, type:"rural" },
+  { name:"Cartago Zona 27", lat:4.7150, lng:-75.9150, type:"rural" },
+  { name:"Cartago Zona 28", lat:4.7250, lng:-75.8850, type:"rural" },
+  { name:"Cartago Zona 29", lat:4.7550, lng:-75.8800, type:"rural" },
+  { name:"Cartago Zona 30", lat:4.7800, lng:-75.8950, type:"rural" },
+
+  // ROLDANILLO – 10 zonas
+  { name:"Roldanillo Zona 1", lat:4.4170, lng:-76.1550, type:"urbana" },
+  { name:"Roldanillo Zona 2", lat:4.4200, lng:-76.1450, type:"urbana" },
+  { name:"Roldanillo Zona 3", lat:4.4100, lng:-76.1600, type:"urbana" },
+  { name:"Roldanillo Zona 4", lat:4.4250, lng:-76.1650, type:"urbana" },
+  { name:"Roldanillo Zona 5", lat:4.4150, lng:-76.1400, type:"urbana" },
+  { name:"Roldanillo Zona 6", lat:4.4350, lng:-76.1750, type:"rural" },
+  { name:"Roldanillo Zona 7", lat:4.4000, lng:-76.1800, type:"rural" },
+  { name:"Roldanillo Zona 8", lat:4.4450, lng:-76.1550, type:"rural" },
+  { name:"Roldanillo Zona 9", lat:4.3950, lng:-76.1400, type:"rural" },
+  { name:"Roldanillo Zona 10",lat:4.4300, lng:-76.1850, type:"rural" },
+
+  { name:"Roldanillo Zona 11", lat:4.4220, lng:-76.1580, type:"urbana" },
+  { name:"Roldanillo Zona 12", lat:4.4180, lng:-76.1670, type:"urbana" },
+  { name:"Roldanillo Zona 13", lat:4.4105, lng:-76.1705, type:"urbana" },
+  { name:"Roldanillo Zona 14", lat:4.4040, lng:-76.1620, type:"urbana" },
+  { name:"Roldanillo Zona 15", lat:4.4055, lng:-76.1500, type:"urbana" },
+  { name:"Roldanillo Zona 16", lat:4.4100, lng:-76.1420, type:"urbana" },
+  { name:"Roldanillo Zona 17", lat:4.4205, lng:-76.1355, type:"urbana" },
+  { name:"Roldanillo Zona 18", lat:4.4300, lng:-76.1400, type:"urbana" },
+  { name:"Roldanillo Zona 19", lat:4.4330, lng:-76.1505, type:"urbana" },
+  { name:"Roldanillo Zona 20", lat:4.4235, lng:-76.1505, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"Roldanillo Zona 21", lat:4.4500, lng:-76.1800, type:"rural" },
+  { name:"Roldanillo Zona 22", lat:4.4650, lng:-76.2000, type:"rural" },
+  { name:"Roldanillo Zona 23", lat:4.4400, lng:-76.2100, type:"rural" },
+  { name:"Roldanillo Zona 24", lat:4.4150, lng:-76.2150, type:"rural" },
+  { name:"Roldanillo Zona 25", lat:4.3900, lng:-76.2050, type:"rural" },
+  { name:"Roldanillo Zona 26", lat:4.3800, lng:-76.1750, type:"rural" },
+  { name:"Roldanillo Zona 27", lat:4.3850, lng:-76.1450, type:"rural" },
+  { name:"Roldanillo Zona 28", lat:4.3950, lng:-76.1200, type:"rural" },
+  { name:"Roldanillo Zona 29", lat:4.4200, lng:-76.1150, type:"rural" },
+  { name:"Roldanillo Zona 30", lat:4.4450, lng:-76.1300, type:"rural" },
+
+
+  // ZARZAL – 10 zonas
+  { name:"Zarzal Zona 1", lat:4.3970, lng:-76.0725, type:"urbana" },
+  { name:"Zarzal Zona 2", lat:4.4020, lng:-76.0620, type:"urbana" },
+  { name:"Zarzal Zona 3", lat:4.3880, lng:-76.0800, type:"urbana" },
+  { name:"Zarzal Zona 4", lat:4.4080, lng:-76.0850, type:"urbana" },
+  { name:"Zarzal Zona 5", lat:4.3920, lng:-76.0600, type:"urbana" },
+  { name:"Zarzal Zona 6", lat:4.4180, lng:-76.0950, type:"rural" },
+  { name:"Zarzal Zona 7", lat:4.3800, lng:-76.1000, type:"rural" },
+  { name:"Zarzal Zona 8", lat:4.4250, lng:-76.0700, type:"rural" },
+  { name:"Zarzal Zona 9", lat:4.3720, lng:-76.0600, type:"rural" },
+  { name:"Zarzal Zona 10",lat:4.4100, lng:-76.1100, type:"rural" },
+
+  { name:"Zarzal Zona 11", lat:4.4050, lng:-76.0750, type:"urbana" },
+  { name:"Zarzal Zona 12", lat:4.3995, lng:-76.0830, type:"urbana" },
+  { name:"Zarzal Zona 13", lat:4.3900, lng:-76.0880, type:"urbana" },
+  { name:"Zarzal Zona 14", lat:4.3840, lng:-76.0720, type:"urbana" },
+  { name:"Zarzal Zona 15", lat:4.3865, lng:-76.0635, type:"urbana" },
+  { name:"Zarzal Zona 16", lat:4.3920, lng:-76.0550, type:"urbana" },
+  { name:"Zarzal Zona 17", lat:4.4020, lng:-76.0520, type:"urbana" },
+  { name:"Zarzal Zona 18", lat:4.4100, lng:-76.0585, type:"urbana" },
+  { name:"Zarzal Zona 19", lat:4.4135, lng:-76.0680, type:"urbana" },
+  { name:"Zarzal Zona 20", lat:4.4005, lng:-76.0705, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"Zarzal Zona 21", lat:4.4300, lng:-76.1000, type:"rural" },
+  { name:"Zarzal Zona 22", lat:4.4450, lng:-76.1250, type:"rural" },
+  { name:"Zarzal Zona 23", lat:4.4200, lng:-76.1400, type:"rural" },
+  { name:"Zarzal Zona 24", lat:4.3950, lng:-76.1450, type:"rural" },
+  { name:"Zarzal Zona 25", lat:4.3700, lng:-76.1400, type:"rural" },
+  { name:"Zarzal Zona 26", lat:4.3600, lng:-76.1150, type:"rural" },
+  { name:"Zarzal Zona 27", lat:4.3650, lng:-76.0850, type:"rural" },
+  { name:"Zarzal Zona 28", lat:4.3750, lng:-76.0500, type:"rural" },
+  { name:"Zarzal Zona 29", lat:4.4000, lng:-76.0400, type:"rural" },
+  { name:"Zarzal Zona 30", lat:4.4250, lng:-76.0450, type:"rural" },
+
+  // LA UNIÓN – 10 zonas
+  { name:"La Unión Zona 1", lat:4.5350, lng:-76.1050, type:"urbana" },
+  { name:"La Unión Zona 2", lat:4.5400, lng:-76.0950, type:"urbana" },
+  { name:"La Unión Zona 3", lat:4.5280, lng:-76.1120, type:"urbana" },
+  { name:"La Unión Zona 4", lat:4.5480, lng:-76.1180, type:"urbana" },
+  { name:"La Unión Zona 5", lat:4.5320, lng:-76.0900, type:"urbana" },
+  { name:"La Unión Zona 6", lat:4.5550, lng:-76.1250, type:"rural" },
+  { name:"La Unión Zona 7", lat:4.5150, lng:-76.1350, type:"rural" },
+  { name:"La Unión Zona 8", lat:4.5650, lng:-76.1050, type:"rural" },
+  { name:"La Unión Zona 9", lat:4.5080, lng:-76.0950, type:"rural" },
+  { name:"La Unión Zona 10",lat:4.5450, lng:-76.1450, type:"rural" },
+
+  { name:"La Unión Zona 11", lat:4.5420, lng:-76.1100, type:"urbana" },
+  { name:"La Unión Zona 12", lat:4.5385, lng:-76.1185, type:"urbana" },
+  { name:"La Unión Zona 13", lat:4.5300, lng:-76.1205, type:"urbana" },
+  { name:"La Unión Zona 14", lat:4.5230, lng:-76.1130, type:"urbana" },
+  { name:"La Unión Zona 15", lat:4.5250, lng:-76.1020, type:"urbana" },
+  { name:"La Unión Zona 16", lat:4.5305, lng:-76.0950, type:"urbana" },
+  { name:"La Unión Zona 17", lat:4.5405, lng:-76.0880, type:"urbana" },
+  { name:"La Unión Zona 18", lat:4.5500, lng:-76.0925, type:"urbana" },
+  { name:"La Unión Zona 19", lat:4.5525, lng:-76.1020, type:"urbana" },
+  { name:"La Unión Zona 20", lat:4.5400, lng:-76.1025, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"La Unión Zona 21", lat:4.5700, lng:-76.1300, type:"rural" },
+  { name:"La Unión Zona 22", lat:4.5900, lng:-76.1500, type:"rural" },
+  { name:"La Unión Zona 23", lat:4.5650, lng:-76.1650, type:"rural" },
+  { name:"La Unión Zona 24", lat:4.5400, lng:-76.1750, type:"rural" },
+  { name:"La Unión Zona 25", lat:4.5150, lng:-76.1700, type:"rural" },
+  { name:"La Unión Zona 26", lat:4.5000, lng:-76.1500, type:"rural" },
+  { name:"La Unión Zona 27", lat:4.5030, lng:-76.1150, type:"rural" },
+  { name:"La Unión Zona 28", lat:4.5100, lng:-76.0800, type:"rural" },
+  { name:"La Unión Zona 29", lat:4.5350, lng:-76.0700, type:"rural" },
+  { name:"La Unión Zona 30", lat:4.5620, lng:-76.0800, type:"rural" },
+
+  // SEVILLA – 10 zonas
+  { name:"Sevilla Zona 1", lat:4.2660, lng:-75.9380, type:"urbana" },
+  { name:"Sevilla Zona 2", lat:4.2710, lng:-75.9280, type:"urbana" },
+  { name:"Sevilla Zona 3", lat:4.2580, lng:-75.9450, type:"urbana" },
+  { name:"Sevilla Zona 4", lat:4.2780, lng:-75.9500, type:"urbana" },
+  { name:"Sevilla Zona 5", lat:4.2640, lng:-75.9220, type:"urbana" },
+  { name:"Sevilla Zona 6", lat:4.2900, lng:-75.9600, type:"rural" },
+  { name:"Sevilla Zona 7", lat:4.2450, lng:-75.9700, type:"rural" },
+  { name:"Sevilla Zona 8", lat:4.3000, lng:-75.9350, type:"rural" },
+  { name:"Sevilla Zona 9", lat:4.2380, lng:-75.9250, type:"rural" },
+  { name:"Sevilla Zona 10",lat:4.2750, lng:-75.9800, type:"rural" },
+
+  { name:"Sevilla Zona 11", lat:4.2735, lng:-75.9405, type:"urbana" },
+  { name:"Sevilla Zona 12", lat:4.2700, lng:-75.9500, type:"urbana" },
+  { name:"Sevilla Zona 13", lat:4.2630, lng:-75.9550, type:"urbana" },
+  { name:"Sevilla Zona 14", lat:4.2540, lng:-75.9470, type:"urbana" },
+  { name:"Sevilla Zona 15", lat:4.2525, lng:-75.9350, type:"urbana" },
+  { name:"Sevilla Zona 16", lat:4.2570, lng:-75.9270, type:"urbana" },
+  { name:"Sevilla Zona 17", lat:4.2665, lng:-75.9200, type:"urbana" },
+  { name:"Sevilla Zona 18", lat:4.2770, lng:-75.9235, type:"urbana" },
+  { name:"Sevilla Zona 19", lat:4.2825, lng:-75.9320, type:"urbana" },
+  { name:"Sevilla Zona 20", lat:4.2720, lng:-75.9350, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"Sevilla Zona 21", lat:4.3050, lng:-75.9650, type:"rural" },
+  { name:"Sevilla Zona 22", lat:4.3200, lng:-75.9900, type:"rural" },
+  { name:"Sevilla Zona 23", lat:4.2900, lng:-76.0050, type:"rural" },
+  { name:"Sevilla Zona 24", lat:4.2600, lng:-76.0100, type:"rural" },
+  { name:"Sevilla Zona 25", lat:4.2400, lng:-75.9950, type:"rural" },
+  { name:"Sevilla Zona 26", lat:4.2250, lng:-75.9600, type:"rural" },
+  { name:"Sevilla Zona 27", lat:4.2300, lng:-75.9200, type:"rural" },
+  { name:"Sevilla Zona 28", lat:4.2450, lng:-75.9000, type:"rural" },
+  { name:"Sevilla Zona 29", lat:4.2700, lng:-75.8900, type:"rural" },
+  { name:"Sevilla Zona 30", lat:4.2950, lng:-75.9050, type:"rural" },
+
+  // CAICEDONIA – 10 zonas
+  { name:"Caicedonia Zona 1", lat:4.3350, lng:-75.8300, type:"urbana" },
+  { name:"Caicedonia Zona 2", lat:4.3400, lng:-75.8200, type:"urbana" },
+  { name:"Caicedonia Zona 3", lat:4.3280, lng:-75.8380, type:"urbana" },
+  { name:"Caicedonia Zona 4", lat:4.3480, lng:-75.8420, type:"urbana" },
+  { name:"Caicedonia Zona 5", lat:4.3330, lng:-75.8150, type:"urbana" },
+  { name:"Caicedonia Zona 6", lat:4.3600, lng:-75.8520, type:"rural" },
+  { name:"Caicedonia Zona 7", lat:4.3180, lng:-75.8600, type:"rural" },
+  { name:"Caicedonia Zona 8", lat:4.3700, lng:-75.8300, type:"rural" },
+  { name:"Caicedonia Zona 9", lat:4.3100, lng:-75.8200, type:"rural" },
+  { name:"Caicedonia Zona 10",lat:4.3500, lng:-75.8700, type:"rural" },
+
+  { name:"Caicedonia Zona 11", lat:4.3420, lng:-75.8350, type:"urbana" },
+  { name:"Caicedonia Zona 12", lat:4.3380, lng:-75.8450, type:"urbana" },
+  { name:"Caicedonia Zona 13", lat:4.3305, lng:-75.8500, type:"urbana" },
+  { name:"Caicedonia Zona 14", lat:4.3225, lng:-75.8425, type:"urbana" },
+  { name:"Caicedonia Zona 15", lat:4.3250, lng:-75.8280, type:"urbana" },
+  { name:"Caicedonia Zona 16", lat:4.3300, lng:-75.8185, type:"urbana" },
+  { name:"Caicedonia Zona 17", lat:4.3385, lng:-75.8120, type:"urbana" },
+  { name:"Caicedonia Zona 18", lat:4.3480, lng:-75.8180, type:"urbana" },
+  { name:"Caicedonia Zona 19", lat:4.3525, lng:-75.8285, type:"urbana" },
+  { name:"Caicedonia Zona 20", lat:4.3400, lng:-75.8305, type:"urbana" },
+
+  // Rurales (anillo externo)
+  { name:"Caicedonia Zona 21", lat:4.3800, lng:-75.8550, type:"rural" },
+  { name:"Caicedonia Zona 22", lat:4.3950, lng:-75.8800, type:"rural" },
+  { name:"Caicedonia Zona 23", lat:4.3680, lng:-75.8950, type:"rural" },
+  { name:"Caicedonia Zona 24", lat:4.3450, lng:-75.9050, type:"rural" },
+  { name:"Caicedonia Zona 25", lat:4.3200, lng:-75.9000, type:"rural" },
+  { name:"Caicedonia Zona 26", lat:4.3000, lng:-75.8750, type:"rural" },
+  { name:"Caicedonia Zona 27", lat:4.3050, lng:-75.8450, type:"rural" },
+  { name:"Caicedonia Zona 28", lat:4.3150, lng:-75.8050, type:"rural" },
+  { name:"Caicedonia Zona 29", lat:4.3400, lng:-75.7900, type:"rural" },
+  { name:"Caicedonia Zona 30", lat:4.3680, lng:-75.8000, type:"rural" }
 ];
+
         this.initializeMap();
         this.initializeEventListeners();
         this.initializeMobileMenu();
@@ -665,34 +1017,20 @@
         setInterval(()=>this.updateTimestamp(), 1000);
         setInterval(()=>this.updateUptime(), 1000);
 
-        setTimeout(()=>{ this.addDrones(35); this.startSimulation(); }, 1000);
-        setInterval(()=>{ if (this.drones.size < 60) this.addDrones(5); }, 15000);
+        // Crear muchos polígonos estáticos
+        setTimeout(()=>{ this.createStaticPolygons(80); }, 1000);
       }
 
       initializeMap(){
-        this.map = L.map('map').setView([3.5394, -76.3036], 10); // Centrado en Palmira
+        this.map = L.map('map').setView([3.5394, -76.3036], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
           attribution:'&copy; OpenStreetMap contributors'
         }).addTo(this.map);
 
-        // 🔒 Deshabilitar clic derecho en el mapa también
         this.map.on('contextmenu', function(e) {
           e.originalEvent.preventDefault();
           return false;
         });
-
-        this.puntosValleCauca.forEach(p=>{
-  // Solo mostrar círculos para zonas rurales, omitir marcadores urbanos
-  if (p.type !== "urbana") {
-    L.circle([p.lat,p.lng],{ 
-      color:'#22c55e', 
-      fillColor:'#22c55e', 
-      fillOpacity:.1, 
-      radius:1500 
-    }).addTo(this.map).bindPopup(`<b>${p.name}</b><br>Zona Rural - Drones sin ubicación`);
-  }
-  // Las zonas urbanas no se muestran en el mapa
-});
 
         window.addEventListener('resize', () => {
           setTimeout(() => this.map.invalidateSize(), 100);
@@ -701,7 +1039,7 @@
 
       initializeEventListeners(){
         document.getElementById('droneSearch')
-          .addEventListener('input', e=>this.filterDrones(e.target.value));
+          .addEventListener('input', e=>this.filterZones(e.target.value));
 
         const app = document.getElementById('app');
         const btnExpand = document.getElementById('btnExpand');
@@ -759,7 +1097,7 @@
           
           const buttons = [
             { text: '📊 Panel de Control', action: () => controlPanel.classList.add('active') },
-            { text: '✈️ Lista de Drones', action: () => dronesPanel.classList.add('active') },
+            { text: '✈️ Lista de Zonas', action: () => dronesPanel.classList.add('active') },
             { text: '🗺️ Solo Mapa', action: () => this.toggleMapOnly() },
             { text: '❌ Cerrar', action: () => document.body.removeChild(menu) }
           ];
@@ -809,180 +1147,93 @@
         dronesPanel.classList.remove('active');
       }
 
-      startSimulation(){
-        if (!this.isRunning) this.isRunning = true;
-        this.addAlert('Sistema autónomo activado - Monitoreando Valle del Cauca','info');
-        requestAnimationFrame(()=>this.animate());
-      }
-
-      addDrones(count){
+      createStaticPolygons(count){
         const droneTypes=['commercial','delivery','surveillance'];
         const missions = [
           'Entrega de alimentos','Vigilancia urbana','Monitoreo de tráfico',
-          'Entrega de paquetes','Inspección de infraestructura','Fotografía aérea','Control de cultivos',
-          'Vigilancia rural','Mapeo topográfico','Búsqueda y rescate',
-          'Monitoreo ambiental','Entrega express','Patrullaje de seguridad'
+          'Entrega de paquetes','Inspección de infraestructura','Fotografía aérea',
+          'Control de cultivos','Vigilancia rural','Mapeo topográfico',
+          'Búsqueda y rescate','Monitoreo ambiental','Entrega express',
+          'Patrullaje de seguridad','Monitoreo de cultivos','Vigilancia de obras'
         ];
 
         for (let i=0;i<count;i++){
-          const id = `DRN-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
+          const id = `ZONA-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
           const type = droneTypes[Math.floor(Math.random()*droneTypes.length)];
           const persona = this.personasNaturales[Math.floor(Math.random()*this.personasNaturales.length)];
           const mission = missions[Math.floor(Math.random()*missions.length)];
-          const speed = 25 + Math.random()*50;
 
-          // Aumentar probabilidad de drones en Palmira
-          const esZonaUrbana = Math.random() > 0.35;
-          const sharesLocation = esZonaUrbana || Math.random() > 0.7;
-          
-          // Priorizar Palmira en las rutas
-          const esPalmira = Math.random() > 0.6;
+          // Seleccionar ubicación aleatoria
+          const location = this.puntosValleCauca[Math.floor(Math.random()*this.puntosValleCauca.length)];
+          const esZonaUrbana = location.type === "urbana";
 
-          let origin, destination;
-          if (esPalmira) {
-            // Rutas dentro de Palmira
-            const puntosPalmira = this.puntosValleCauca.filter(p => 
-              p.name.includes('Palmira') || 
-              p.name.includes('Cerrito') ||
-              p.name.includes('Rozo') ||
-              p.name.includes('Bolo') ||
-              p.name.includes('Obando')
-            );
-            origin = puntosPalmira[Math.floor(Math.random()*puntosPalmira.length)];
-            const cercanos = puntosPalmira.filter(p => p.name !== origin.name);
-            destination = cercanos.length ? cercanos[Math.floor(Math.random()*cercanos.length)] : puntosPalmira[Math.floor(Math.random()*puntosPalmira.length)];
-          } else if (esZonaUrbana){
-            const urb = this.puntosValleCauca.filter(p=>p.type==="urbana");
-            origin = urb[Math.floor(Math.random()*urb.length)];
-            const cercanos = urb.filter(p=>p.name!==origin.name && this.calculateDistance(origin.lat,origin.lng,p.lat,p.lng)<20);
-            destination = cercanos.length ? cercanos[Math.floor(Math.random()*cercanos.length)] : urb[Math.floor(Math.random()*urb.length)];
-          } else {
-            const rur = this.puntosValleCauca.filter(p=>p.type==="rural");
-            origin = rur[Math.floor(Math.random()*rur.length)];
-            const cercanos = rur.filter(p=>p.name!==origin.name && this.calculateDistance(origin.lat,origin.lng,p.lat,p.lng)<30);
-            destination = cercanos.length ? cercanos[Math.floor(Math.random()*cercanos.length)] : rur[Math.floor(Math.random()*rur.length)];
-          }
-
-          const drone = {
-            id, type, persona, mission, speed,
-            origin, destination,
-            position:{ lat:origin.lat, lng:origin.lng },
-            progress: Math.random()*0.4,
-            status:'en_ruta',
-            battery: 70 + Math.random()*30,
-            altitude: esZonaUrbana ? 60+Math.random()*60 : 90+Math.random()*80,
-            sharesLocation, estimatedArea:null, esZonaUrbana,
-            lastPositionUpdate: Date.now()
+          const zoneData = {
+            id, type, persona, mission,
+            position:{ lat:location.lat, lng:location.lng },
+            status:'activo',
+            esZonaUrbana,
+            locationName: location.name,
+            lastUpdate: Date.now()
           };
 
-          if (!sharesLocation){
-            drone.estimatedArea = this.createEstimatedArea(drone);
-            this.createPolygon(drone);
-          } else {
-            this.createDroneMarker(drone);
-          }
+          zoneData.estimatedArea = this.createEstimatedArea(zoneData);
+          this.createPolygon(zoneData);
 
-          this.drones.set(id, drone);
+          this.polygons.set(id, zoneData);
         }
 
-        this.addAlert(`${count} drones agregados al sistema`,'success');
+        this.addAlert(`${count} zonas de operación creadas`,'success');
         this.updateUI(true);
       }
 
-      createEstimatedArea(drone){
-        const r = 0.01 + Math.random()*0.015;
-        const pts=[];
-        for(let i=0;i<10;i++){
-          const a = (i/10)*2*Math.PI;
-          pts.push([drone.position.lat + r*Math.cos(a), drone.position.lng + r*Math.sin(a)]);
+      createEstimatedArea(zoneData) {
+        const sides = Math.random() > 0.5 ? 6 : 7; // Hexágono (6) o Heptágono (7)
+        const radius = 0.005 + Math.random() * 0.008; // Radio del polígono
+        const centerLat = zoneData.position.lat;
+        const centerLng = zoneData.position.lng;
+        
+        const points = [];
+        for (let i = 0; i < sides; i++) {
+          const angle = (i / sides) * 2 * Math.PI;
+          // Agregar pequeña variación aleatoria para hacerlo más irregular
+          const variedRadius = radius * (0.7 + Math.random() * 0.6);
+          
+          const lat = centerLat + variedRadius * Math.cos(angle);
+          const lng = centerLng + variedRadius * Math.sin(angle);
+          points.push([lat, lng]);
         }
-        return pts;
+        
+        // Cerrar el polígono conectando el último punto con el primero
+        points.push(points[0]);
+        
+        return points;
       }
 
-      createPolygon(drone){
-        if (!drone.estimatedArea) return;
-        const polygon = L.polygon(drone.estimatedArea, {
-          className:`polygon-fill polygon-${drone.type}`,
-          fillOpacity:.25, weight:2.5, opacity:.7
+      createPolygon(zoneData){
+        if (!zoneData.estimatedArea) return;
+        
+        const polygon = L.polygon(zoneData.estimatedArea, {
+          className: `polygon-fill polygon-${zoneData.type}`,
+          fillOpacity: 0.15,
+          weight: 2,
+          opacity: 0.8,
+          smoothFactor: 1
         }).addTo(this.map);
 
         polygon.bindPopup(`
-          <div style="min-width:220px;">
-            <b>${drone.id}</b><br>
-            Operador: ${drone.persona}<br>
-            Misión: ${drone.mission}<br>
-            <strong style="color:#ef4444;">UBICACIÓN ESTIMADA</strong><br>
-            Zona: ${drone.origin.name}<br>
-            Última actualización: ${new Date().toLocaleTimeString()}
+          <div style="min-width:240px;">
+            <b>${zoneData.id}</b><br>
+            <span style="color:${this.getDroneColor(zoneData.type)}; font-weight:600;">
+              ${zoneData.type.toUpperCase()}
+            </span><br>
+            Operador: ${zoneData.persona}<br>
+            Misión: ${zoneData.mission}<br>
+            Ubicación: ${zoneData.locationName}<br>
+            Tipo: ${zoneData.esZonaUrbana ? 'Urbana' : 'Rural'}<br>
+            Vértices: ${zoneData.estimatedArea.length - 1}<br>
+            Estado: <span style="color:#10b981;">ACTIVO</span>
           </div>
         `);
-
-        this.polygons.set(drone.id, polygon);
-      }
-
-      updatePolygon(drone){
-        if (!drone.estimatedArea || !this.polygons.has(drone.id)) return;
-        const polygon = this.polygons.get(drone.id);
-
-        const centerLat = drone.position.lat;
-        const centerLng = drone.position.lng;
-        
-        const newArea = drone.estimatedArea.map((point, index) => {
-          const originalCenter = this.getPolygonCenter(drone.estimatedArea);
-          const offsetLat = point[0] - originalCenter[0];
-          const offsetLng = point[1] - originalCenter[1];
-          return [centerLat + offsetLat, centerLng + offsetLng];
-        });
-        
-        drone.estimatedArea = newArea;
-        polygon.setLatLngs(newArea);
-      }
-
-      getPolygonCenter(points) {
-        let latSum = 0, lngSum = 0;
-        points.forEach(point => {
-          latSum += point[0];
-          lngSum += point[1];
-        });
-        return [latSum / points.length, lngSum / points.length];
-      }
-
-      createDroneMarker(drone){
-        const iconHtml = `
-          <div class="pulse"></div>
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
-            <path fill="${this.getDroneColor(drone.type)}"
-              d="M22 16v-2l-8.5-5V3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V9L2 14v2l8.5-2.5V19L8 20.5V22l4-1 4 1v-1.5L13.5 19v-5.5L22 16z"/>
-          </svg>
-        `;
-
-        const droneIcon = L.divIcon({
-          className:`drone-icon ${drone.type}`,
-          html:iconHtml, iconSize:[28,28], iconAnchor:[14,14]
-        });
-
-        const marker = L.marker([drone.position.lat, drone.position.lng], {
-          icon:droneIcon,
-          rotationAngle:this.calculateBearing(drone.origin, drone.destination)
-        }).addTo(this.map);
-
-        marker.bindTooltip(`
-          <div style="font-weight:800;">${drone.id}</div>
-          <div>Operador: ${drone.persona}</div>
-          <div>Misión: ${drone.mission}</div>
-          <div>Vel: ${Math.round(drone.speed)} km/h</div>
-          <div>Alt: ${Math.round(drone.altitude)} m</div>
-          <div>Bat: ${Math.round(drone.battery)}%</div>
-        `);
-
-        this.droneMarkers.set(drone.id, marker);
-
-        const routeLine = L.polyline([
-          [drone.origin.lat, drone.origin.lng],
-          [drone.destination.lat, drone.destination.lng]
-        ], { color:this.getDroneColor(drone.type), weight:2, opacity:.4, dashArray:'6,4' }).addTo(this.map);
-
-        this.routeLines.set(drone.id, routeLine);
       }
 
       getDroneColor(type){
@@ -994,155 +1245,28 @@
         return c[type] || '#2563eb';
       }
 
-      calculateBearing(origin, dest){
-        const lat1 = origin.lat*Math.PI/180, lat2 = dest.lat*Math.PI/180;
-        const dLng = (dest.lng - origin.lng)*Math.PI/180;
-        const y = Math.sin(dLng)*Math.cos(lat2);
-        const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
-        return (Math.atan2(y,x)*180/Math.PI + 360) % 360;
-      }
-
-      animate(){
-        if (!this.isRunning) return;
-        const now = performance.now();
-        const dt = (now - this.prevTs)/1000;
-        this.prevTs = now;
-
-        this.updateDrones(dt);
-        this.checkConflicts();
-        this.updateUI();
-
-        requestAnimationFrame(()=>this.animate());
-      }
-
-      updateDrones(dt){
-        const speedFactor = this.simulationSpeed;
-
-        this.drones.forEach(drone=>{
-          if (drone.status!=='en_ruta') return;
-
-          const distKm = Math.max(this.calculateDistance(
-            drone.origin.lat, drone.origin.lng,
-            drone.destination.lat, drone.destination.lng
-          ), 0.001);
-
-          const fracPerSec = (drone.speed/3600) / distKm;
-          drone.progress += fracPerSec * dt * speedFactor;
-
-          if (drone.progress >= 1){
-            drone.origin = drone.destination;
-            let newDest;
-            
-            // Priorizar rutas en Palmira
-            const esPalmira = Math.random() > 0.6;
-            
-            if (esPalmira) {
-              const puntosPalmira = this.puntosValleCauca.filter(p => 
-                p.name.includes('Palmira') || 
-                p.name.includes('Cerrito') ||
-                p.name.includes('Rozo') ||
-                p.name.includes('Bolo') ||
-                p.name.includes('Obando')
-              );
-              const cercanos = puntosPalmira.filter(p => p.name !== drone.origin.name);
-              newDest = cercanos.length ? cercanos[Math.floor(Math.random()*cercanos.length)] : puntosPalmira[Math.floor(Math.random()*puntosPalmira.length)];
-            } else if (drone.esZonaUrbana){
-              const urb = this.puntosValleCauca.filter(p=>p.type==="urbana");
-              const cercanos = urb.filter(p=>p.name!==drone.origin.name && this.calculateDistance(drone.origin.lat,drone.origin.lng,p.lat,p.lng)<20);
-              newDest = cercanos.length? cercanos[Math.floor(Math.random()*cercanos.length)] : urb[Math.floor(Math.random()*urb.length)];
-            }else{
-              const rur = this.puntosValleCauca.filter(p=>p.type==="rural");
-              const cercanos = rur.filter(p=>p.name!==drone.origin.name && this.calculateDistance(drone.origin.lat,drone.origin.lng,p.lat,p.lng)<30);
-              newDest = cercanos.length? cercanos[Math.floor(Math.random()*cercanos.length)] : rur[Math.floor(Math.random()*rur.length)];
-            }
-            drone.destination = newDest;
-            drone.progress = 0;
-
-            if (drone.sharesLocation && this.routeLines.has(drone.id)){
-              this.map.removeLayer(this.routeLines.get(drone.id));
-              const newLine = L.polyline([
-                [drone.origin.lat, drone.origin.lng],
-                [drone.destination.lat, drone.destination.lng]
-              ], { color:this.getDroneColor(drone.type), weight:2, opacity:.4, dashArray:'6,4' }).addTo(this.map);
-              this.routeLines.set(drone.id, newLine);
-            }
-          }
-
-          drone.position.lat = drone.origin.lat + (drone.destination.lat - drone.origin.lat)*drone.progress;
-          drone.position.lng = drone.origin.lng + (drone.destination.lng - drone.origin.lng)*drone.progress;
-
-          if (drone.sharesLocation){
-            const marker = this.droneMarkers.get(drone.id);
-            if (marker){
-              marker.setLatLng([drone.position.lat, drone.position.lng]);
-              marker.setRotationAngle(this.calculateBearing(drone.origin, drone.destination));
-            }
-          } else {
-            this.updatePolygon(drone);
-          }
-
-          const consumption = 0.12 * speedFactor * dt;
-          drone.battery -= consumption;
-          if (drone.battery <= 20){
-            drone.battery = 80 + Math.random()*20;
-            this.addAlert(`${drone.id} recargando batería`,'warning');
-          }
-        });
-      }
-
-      checkConflicts(){
-        let conflicts = 0;
-        const arr = Array.from(this.drones.values()).filter(d=>d.sharesLocation);
-
-        for (let i=0;i<arr.length;i++){
-          for (let j=i+1;j<arr.length;j++){
-            const d1 = arr[i], d2 = arr[j];
-            const dist = this.calculateDistance(d1.position.lat,d1.position.lng, d2.position.lat,d2.position.lng);
-            if (dist < 0.08){
-              conflicts++;
-              if (Math.random() < 0.05){
-                this.addAlert(`Posible conflicto: ${d1.id} vs ${d2.id} (${Math.round(dist*1000)} m)`, 'danger');
-              }
-            }
-          }
-        }
-        this.conflictCount = conflicts;
-      }
-
-      calculateDistance(lat1,lng1,lat2,lng2){
-        const R=6371;
-        const dLat=(lat2-lat1)*Math.PI/180;
-        const dLng=(lng2-lng1)*Math.PI/180;
-        const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-        return 2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      }
-
       updateUI(force=false){
         const now = performance.now();
         if (!force && now - this.lastUiUpdate < this.uiIntervalMs) return;
         this.lastUiUpdate = now;
 
-        const total = this.drones.size;
-        const all = Array.from(this.drones.values());
+        const total = this.polygons.size;
+        const all = Array.from(this.polygons.values());
         const urban = all.filter(d=>d.esZonaUrbana).length;
         const rural = total - urban;
-        const cali = all.filter(d=> d.origin.name.includes('Cali') || d.destination.name.includes('Cali')).length;
-        const palmira = all.filter(d=> d.origin.name.includes('Palmira') || d.destination.name.includes('Palmira')).length;
-        const noLoc = all.filter(d=>!d.sharesLocation).length;
+        const cali = all.filter(d=> d.locationName.includes('Cali')).length;
+        const palmira = all.filter(d=> d.locationName.includes('Palmira')).length;
 
         document.getElementById('totalDrones').textContent = total;
         document.getElementById('activeFlights').textContent = total;
-        document.getElementById('conflicts').textContent = this.conflictCount;
-        document.getElementById('noLocationDrones').textContent = noLoc;
-        document.getElementById('activePolygons').textContent = this.polygons.size;
-        document.getElementById('urbanDrones').textContent = urban;
-        document.getElementById('ruralDrones').textContent = rural;
-        document.getElementById('caliDrones').textContent = cali + palmira; // Incluir Palmira en Cali
+        document.getElementById('noLocationDrones').textContent = rural;
+        document.getElementById('activePolygons').textContent = urban;
+        document.getElementById('urbanDrones').textContent = total;
+        document.getElementById('ruralDrones').textContent = cali;
+        document.getElementById('updatedPolygons').textContent = palmira;
+        document.getElementById('caliDrones').textContent = new Date().getSeconds();
 
-        const avgSpeed = total ? Math.round(all.reduce((s,d)=>s+d.speed,0)/total) : 0;
-        document.getElementById('avgSpeed').textContent = avgSpeed;
-
-        this.updateDronesList(all);
+        this.updateZonesList(all);
       }
 
       updateUptime(){
@@ -1154,41 +1278,32 @@
           `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
       }
 
-      updateDronesList(dronesArray){
+      updateZonesList(zonesArray){
         const list = document.getElementById('dronesList');
         const search = (document.getElementById('droneSearch').value || "").toLowerCase();
         const frag = document.createDocumentFragment();
 
-        dronesArray.forEach(drone=>{
-          const text = `${drone.id} ${drone.type} ${drone.persona} ${drone.mission} ${drone.origin.name} ${drone.destination.name}`.toLowerCase();
+        zonesArray.forEach(zone=>{
+          const text = `${zone.id} ${zone.type} ${zone.persona} ${zone.mission} ${zone.locationName}`.toLowerCase();
           if (search && !text.includes(search)) return;
 
-          const batteryLevel = drone.battery>70? 'high' : drone.battery>30? 'medium' : 'low';
-          const locationStatus = drone.sharesLocation
-            ? '<span style="color:#10b981;">📍 Ubicación en tiempo real</span>'
-            : '<span style="color:#ef4444;">❓ Ubicación estimada</span>';
-          const zona = drone.esZonaUrbana ? 'Urbana' : 'Rural';
-          const dist = this.calculateDistance(drone.origin.lat,drone.origin.lng,drone.destination.lat,drone.destination.lng);
+          const zona = zone.esZonaUrbana ? 'Urbana' : 'Rural';
 
           const div = document.createElement('div');
           div.className='drone-item';
           div.innerHTML=`
             <div class="drone-item-header">
-              <span class="drone-id">${drone.id}</span>
-              <span class="drone-type" style="background:${this.getDroneColor(drone.type)}">${drone.type}</span>
+              <span class="drone-id">${zone.id}</span>
+              <span class="drone-type" style="background:${this.getDroneColor(zone.type)}">${zone.type}</span>
             </div>
             <div class="drone-info">
-              <strong>${drone.persona}</strong><br>
-              ${locationStatus}<br>
-              Zona: ${zona}<br>
-              Misión: ${drone.mission}<br>
-              Ruta: ${drone.origin.name} → ${drone.destination.name}<br>
-              Distancia: ${Math.round(dist)} km<br>
-              Vel: ${Math.round(drone.speed)} km/h | Alt: ${Math.round(drone.altitude)} m<br>
-              Batería: ${Math.round(drone.battery)}%
-              <span class="battery-indicator">
-                <span class="battery-level battery-${batteryLevel}" style="width:${Math.max(0,Math.min(100,Math.round(drone.battery)))}%"></span>
-              </span>
+              <strong>${zone.persona}</strong><br>
+              <span style="color:#10b981;">📍 Zona Activa</span><br>
+              Tipo: ${zona}<br>
+              Ubicación: ${zone.locationName}<br>
+              Misión: ${zone.mission}<br>
+              Estado: <span style="color:#10b981;">ACTIVO</span><br>
+              Vértices: ${zone.estimatedArea.length - 1}
             </div>
           `;
           frag.appendChild(div);
@@ -1198,7 +1313,7 @@
         list.appendChild(frag);
       }
 
-      filterDrones(){ this.updateUI(true); }
+      filterZones(){ this.updateUI(true); }
 
       addAlert(message, type='info'){
         const container = document.getElementById('alertsContainer');
@@ -1213,10 +1328,6 @@
     }
 
     document.addEventListener('DOMContentLoaded',()=>{ window.utmSimulation = new UTMSimulation(); });
-
-
-
-    
   </script>
 </body>
 </html>
